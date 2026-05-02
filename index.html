@@ -485,8 +485,10 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
     </div>
     <div class="ntcard">
       <h3>🔄 Sincronização manual</h3>
-      <p style="font-size:13px;color:var(--mu);margin-bottom:10px">Importa registros do Notion que ainda não estão neste dispositivo.</p>
-      <button class="synbtn" style="margin:0" onclick="syncNotion()">Sincronizar agora</button>
+      <p style="font-size:13px;color:var(--mu);margin-bottom:8px">Importa registros do Notion que ainda não estão neste dispositivo.</p>
+      <div style="font-size:12px;color:var(--mu);margin-bottom:10px" id="sync-local-count"></div>
+      <button class="synbtn" style="margin:0;width:100%;padding:12px" onclick="syncNotion()">🔄 Sincronizar agora</button>
+      <div id="sync-status"></div>
     </div>
   </div>
 
@@ -777,10 +779,12 @@ function rmCat(tipo,i){
 }
 
 function renderNotion(){
-  const tok=getToken();
+  var tok=getToken();
   document.getElementById('tokstatus').innerHTML=tok
     ?'<div class="tokbadge ok">✅ Token configurado</div>'
     :'<div class="tokbadge no">⚠️ Token não configurado</div>';
+  var countEl=document.getElementById('sync-local-count');
+  if(countEl)countEl.textContent='📊 Dados locais: '+trans.length+' transação(ões) armazenada(s).';
 }
 function salvarToken(){
   const v=document.getElementById('tokinput').value.trim();
@@ -828,56 +832,42 @@ async function notionQuery(){
 
 async function syncNotion(){
   if(!getToken()){badge('Configure o token na aba 🔗 Notion','err');setTab('notion');return}
-  const btn=document.getElementById('synbtn');btn.disabled=true;badge('🔄 Sincronizando...','sync');
+  var btn=document.getElementById('synbtn');
+  var btnOrig=btn?btn.textContent:'🔄 Sincronizar';
+  if(btn){btn.disabled=true;btn.textContent='⏳ Aguarde...';}
+  var statusEl=document.getElementById('sync-status');
+  if(statusEl)statusEl.innerHTML='<div style="color:var(--am);font-size:13px;padding:10px;background:var(--aml);border-radius:8px;margin-top:10px">🔄 Buscando dados no Notion...</div>';
+  badge('🔄 Conectando ao Notion...','sync');
   try{
-    const pages=await notionQuery();
-    const nidsNotion=new Set(pages.map(p=>p.nid).filter(Boolean));
-    const nidsLocais=new Set(trans.map(t=>t.nid).filter(Boolean));
-    // 1. Importar novos do Notion
-    let novos=0;
-    pages.forEach(np=>{
+    var pages=await notionQuery();
+    if(statusEl)statusEl.innerHTML='<div style="color:var(--az);font-size:13px;padding:10px;background:var(--azl);border-radius:8px;margin-top:10px">📥 Notion: '+pages.length+' registros encontrados. Importando...</div>';
+    badge('📥 '+pages.length+' registros encontrados...','sync');
+    await new Promise(function(r){setTimeout(r,800);});
+    var nidsNotion=new Set(pages.map(function(p){return p.nid;}).filter(Boolean));
+    var nidsLocais=new Set(trans.map(function(t){return t.nid;}).filter(Boolean));
+    var novos=0;
+    pages.forEach(function(np){
       if(np.nid&&!nidsLocais.has(np.nid)){
         trans.unshift({id:Date.now()+Math.random(),desc:np.desc,tipo:np.tipo,categoria:np.categoria,valor:np.valor,data:np.data,obs:np.obs,nid:np.nid});
         novos++;
       }
     });
-    // 2. Remover locais que foram deletados no Notion
-    const antes=trans.length;
-    trans=trans.filter(t=>!t.nid||nidsNotion.has(t.nid));
-    const removidos=antes-trans.length;
+    var antes=trans.length;
+    trans=trans.filter(function(t){return !t.nid||nidsNotion.has(t.nid);});
+    var removidos=antes-trans.length;
     saveT();
-    const p=[];
-    if(novos>0)p.push(novos+' novo(s)');
-    if(removidos>0)p.push(removidos+' removido(s)');
-    badge('✅ '+(p.length?p.join(', ')+'!':'Tudo já sincronizado.'),'ok');
+    var countEl=document.getElementById('sync-local-count');
+    if(countEl)countEl.textContent='📊 Dados locais: '+trans.length+' transação(ões).';
+    var msg=novos>0?'✅ '+novos+' importado(s)! Total local: '+trans.length+' registros.':'✅ Tudo sincronizado! '+trans.length+' registros locais.';
+    if(statusEl)statusEl.innerHTML='<div style="color:var(--v);font-size:13px;padding:10px;background:var(--vl);border-radius:8px;margin-top:10px">'+msg+'</div>';
+    badge(msg,'ok');
     render();
-  }catch(e){badge('❌ '+e.message,'err')}
-  finally{btn.disabled=false}
-}
-
-function abrirModal(){
-  document.getElementById('fd').value='';
-  document.getElementById('fv').value='';
-  document.getElementById('fdt').value=today();
-  document.getElementById('fo').value='';
-  document.getElementById('ferr').style.display='none';
-  setTipo('Gasto');
-  document.getElementById('ovl-t').classList.add('open');
-  setTimeout(()=>document.getElementById('fd').focus(),120);
-}
-function fecharModal(id){document.getElementById(id).classList.remove('open')}
-function fecharSe(e,id){if(e.target===e.currentTarget)fecharModal(id)}
-
-function setTipo(t){
-  tipoF=t;
-  document.getElementById('btg').className='ttb'+(t==='Gasto'?' ag':'');
-  document.getElementById('btr').className='ttb'+(t==='Receita'?' ar':'');
-  document.getElementById('btgd').className='ttb'+(t==='Guardado'?' agd':'');
-  const corMap={Gasto:'var(--r)',Receita:'var(--v)',Guardado:'var(--az)'};
-  document.getElementById('badd').style.background=corMap[t]||'var(--v)';
-  document.getElementById('badd').textContent='Adicionar '+t;
-  const cats=t==='Receita'?catR:t==='Guardado'?catGD:catG;
-  document.getElementById('fc').innerHTML=cats.map(c=>`<option value="${c}">${gi(c)} ${c}</option>`).join('');
+  }catch(e){
+    var em='❌ Erro: '+e.message;
+    if(statusEl)statusEl.innerHTML='<div style="color:var(--r);font-size:13px;padding:10px;background:var(--rl);border-radius:8px;margin-top:10px">'+em+'</div>';
+    badge(em,'err');
+  }
+  finally{if(btn){btn.disabled=false;btn.textContent=btnOrig;}}
 }
 
 async function salvar(){
