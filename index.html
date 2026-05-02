@@ -830,20 +830,33 @@ async function notionQuery(){
   }while(cursor);
   // Mapeamento de nomes antigos/sem acento para nomes corretos
   var CAT_MAP={
-    'Combustivel':'Combustível','Combustível':'Combustível',
-    'Veiculo':'Veículo','Veículo':'Veículo',
-    'Alimentacao':'Alimentação','Alimentação':'Alimentação',
+    // Combustível
+    'Combustivel':'Combustível','Combustível':'Combustível','combustivel':'Combustível',
+    // Veículo
+    'Veiculo':'Veículo','Veículo':'Veículo','veiculo':'Veículo',
+    // Alimentação
+    'Alimentacao':'Alimentação','Alimentação':'Alimentação','alimentacao':'Alimentação',
+    // Pix/Débito — todas as variações
     'Pix':'Pix/Débito','Pix/Débito':'Pix/Débito','Pix Debito':'Pix/Débito',
-    'Moradia':'Moradia','Moradia ':'Moradia',
-    'Pagamento de Alunos':'Pagamento de Alunos',
-    'Pagamento Cooperativa':'Pagamento Cooperativa',
-    'Recebido':'Recebido',
-    'Tesouro Direto':'Tesouro Direto','Tesouro':'Tesouro Direto',
-    'Acoes':'Ações','Ações':'Ações','Acão':'Ações',
-    'ETFs':'ETFs','Etfs':'ETFs',
-    'FIs':'FIs','Fis':'FIs',
+    'PIX':'Pix/Débito','PIX/Débito':'Pix/Débito','PIX / Débito':'Pix/Débito',
+    'Pix / Débito':'Pix/Débito','pix':'Pix/Débito','Débito':'Pix/Débito',
+    'Debito':'Pix/Débito','PIX/DÉBITO':'Pix/Débito',
+    // Moradia
+    'Moradia':'Moradia','moradia':'Moradia',
+    // Receitas
+    'Pagamento de Alunos':'Pagamento de Alunos','PG Aluno':'Pagamento de Alunos','PG aluno':'Pagamento de Alunos',
+    'Pagamento Cooperativa':'Pagamento Cooperativa','PG Cooperativa':'Pagamento Cooperativa','PG Coop':'Pagamento Cooperativa',
+    'Recebido':'Recebido','recebido':'Recebido',
+    // Investimentos
+    'Tesouro Direto':'Tesouro Direto','Tesouro':'Tesouro Direto','tesouro':'Tesouro Direto',
+    'Acoes':'Ações','Ações':'Ações','ações':'Ações','acoes':'Ações',
+    'ETFs':'ETFs','Etfs':'ETFs','etfs':'ETFs','ETF':'ETFs',
+    'FIs':'FIs','Fis':'FIs','fis':'FIs','FI':'FIs',
+    // Legados
     'Cartao de Credito':'Pix/Débito','Cartão de Crédito':'Pix/Débito',
     'Caixinha':'Recebido',
+    // Outros
+    'Outros':'Outros',
   };
 
   return pages.map(function(p){
@@ -907,6 +920,29 @@ async function syncNotion(){
     var antes=trans.length;
     trans=trans.filter(function(t){return !t.nid||nidsNotion.has(t.nid);});
     var removidos=antes-trans.length;
+    // Migrar categorias antigas ('Outros'/vazias) usando a nova lógica
+    trans = trans.map(function(t){
+      if(t.categoria && t.categoria !== 'Outros' && t.categoria !== '') return t;
+      var cat = t.categoria || '';
+      var dl = (t.desc||'').toLowerCase();
+      var obsVal = (t.obs||'');
+      if(CAT_MAP[obsVal]) cat = CAT_MAP[obsVal];
+      else if(!cat || cat==='Outros'){
+        if(dl.indexOf('ação')>-1||dl.indexOf('ações')>-1||dl.indexOf('acoes')>-1) cat='Ações';
+        else if(dl.indexOf('etf')>-1) cat='ETFs';
+        else if(dl.indexOf(' fi ')>-1||dl.indexOf('fis')>-1||dl.indexOf('fundo')>-1) cat='FIs';
+        else if(dl.indexOf('tesouro')>-1) cat='Tesouro Direto';
+        else if(dl.indexOf('btc')>-1||dl.indexOf('cripto')>-1||dl.indexOf('bitcoin')>-1) cat='Outros';
+        else if(dl.indexOf('combustiv')>-1||dl.indexOf('gasolin')>-1||dl.indexOf('etanol')>-1||dl.indexOf('escolar')>-1) cat='Combustível';
+        else if(dl.indexOf('alimenta')>-1||dl.indexOf('mercado')>-1||dl.indexOf('superm')>-1||dl.indexOf('restaur')>-1||dl.indexOf('pizza')>-1||dl.indexOf('padaria')>-1||dl.indexOf('lanch')>-1||dl.indexOf('espet')>-1||dl.indexOf('cafe')>-1||dl.indexOf('café')>-1||dl.indexOf('economart')>-1||dl.indexOf('villefort')>-1||dl.indexOf('mart ')>-1) cat='Alimentação';
+        else if(dl.indexOf('moradia')>-1||dl.indexOf('aluguel')>-1||dl.indexOf('condom')>-1||dl.indexOf('internet')>-1||dl.indexOf('luz ')>-1||dl.indexOf('água')>-1||dl.indexOf('agua')>-1) cat='Moradia';
+        else if(dl.indexOf('veiculo')>-1||dl.indexOf('veículo')>-1||dl.indexOf('prestação')>-1||dl.indexOf('manutencao')>-1||dl.indexOf('borracha')>-1||dl.indexOf('oficina')>-1) cat='Veículo';
+        else if(dl.indexOf('cooperat')>-1||dl.indexOf('coop')>-1) cat='Pagamento Cooperativa';
+        else if(dl.indexOf('aluno')>-1||dl.indexOf('pg aluno')>-1||dl.indexOf('escolar')>-1) cat='Pagamento de Alunos';
+        else if(obsVal&&obsVal!='Outros') cat=obsVal; // usar obs como está se não mapeou
+      }
+      return Object.assign({},t,{categoria:cat||t.categoria});
+    });
     saveT();
     var countEl=document.getElementById('sync-local-count');
     if(countEl)countEl.textContent='📊 Dados locais: '+trans.length+' transação(ões).';
@@ -1784,7 +1820,7 @@ render();
 <!-- MODAL EDIÇÃO -->
 <div class="ovl" id="ovl-e" onclick="fecharSe(event,'ovl-e')">
   <div class="mdl">
-    <div class="mhdr"><span class="mtit">Editar transação</span><button class="mcls" onclick="fecharModal('ovl-e')">×</button></div>
+    <div class="mhdr"><span class="mtit">Editar transação</span><button class="mcls" onclick="event.stopPropagation();fecharModal('ovl-e')">×</button></div>
     <div class="ttgl">
       <button class="ttb" id="ebtg" onclick="setTipoEdit('Gasto')">💸 Gasto</button>
       <button class="ttb" id="ebtr" onclick="setTipoEdit('Receita')">💰 Receita</button>
@@ -1799,7 +1835,7 @@ render();
     <div class="fld"><label>Observação</label><input id="efo" type="text" placeholder="Detalhe extra..."/></div>
     <div class="errmsg" id="eferr" style="display:none"></div>
     <div class="brow">
-      <button class="bcanc" onclick="fecharModal('ovl-e')">Cancelar</button>
+      <button class="bcanc" onclick="event.stopPropagation();fecharModal('ovl-e')">Cancelar</button>
       <button class="badd" id="ebadd" style="background:var(--az)" onclick="salvarEdicao()">💾 Salvar alterações</button>
     </div>
   </div>
