@@ -558,7 +558,11 @@ let cbar=null,cpat=null;
 
 const brl=v=>Math.abs(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const td=s=>new Date(s+'T12:00:00');
-const gi=c=>ICONS[c]||'📌';
+const gi=function(cat,tipo){
+  if(ICONS[cat]) return ICONS[cat];
+  if(!cat||cat==='') return tipo==='Receita'?'💰':tipo==='Guardado'||tipo==='Investimentos'?'📦':'💸';
+  return '📌';
+};
 const today=()=>new Date().toISOString().split('T')[0];
 const doMes=(m,a)=>trans.filter(t=>{const d=td(t.data);return d.getMonth()===m&&d.getFullYear()===a});
 const doAno=a=>trans.filter(t=>td(t.data).getFullYear()===a);
@@ -691,7 +695,7 @@ function renderPatrimonio(){
   empty.style.display='none';
   lista.innerHTML=todos.map(t=>`
     <div class="pat-item">
-      <div class="pat-icon">${gi(t.categoria)}</div>
+      <div class="pat-icon">${gi(t.categoria,t.tipo)}</div>
       <div class="pat-info">
         <div class="pat-name">${t.desc}</div>
         <div class="pat-date">${t.categoria} · ${td(t.data).toLocaleDateString('pt-BR')}${t.obs?' · '+t.obs:''}</div>
@@ -743,7 +747,7 @@ function renderTransacoes(){
   const prefTipo={Receita:'+',Gasto:'-',Guardado:'+'};
   el.innerHTML=lista.map(t=>`
     <div class="litem">
-      <div class="lic" style="background:${bgTipo[t.tipo]||'var(--azl)'}">${gi(t.categoria)}</div>
+      <div class="lic" style="background:${bgTipo[t.tipo]||'var(--azl)'}">${gi(t.categoria,t.tipo)}</div>
       <div class="linf">
         <div class="ldsc">${t.desc}${!t.nid?'<span style="margin-left:5px;font-size:10px;color:var(--am);font-weight:600">⚠️local</span>':''}</div>
         <div class="lmet">${t.tipo} · ${t.categoria} · ${td(t.data).toLocaleDateString('pt-BR')}${t.obs?' · '+t.obs:''}</div>
@@ -826,7 +830,11 @@ async function notionQuery(){
   }while(cursor);
   return pages.map(p=>{
     const pr=p.properties||{};
-    return{nid:p.id,desc:(pr['Descrição']?.title?.[0]?.plain_text)||'',tipo:(pr['Tipo']?.select?.name)||'Gasto',categoria:(pr['Categoria']?.select?.name)||'Outros',valor:pr['Valor']?.number||0,data:pr['Data']?.date?.start||today(),obs:(pr['Observação']?.rich_text?.[0]?.plain_text)||''};
+    const catRaw=(pr['Categoria']?.select?.name)||'';
+    const obs=(pr['Observação']?.rich_text?.[0]?.plain_text)||'';
+    // Se categoria vazia, tenta usar obs como categoria (registros importados da planilha)
+    const catFinal = catRaw || '';
+    return{nid:p.id,desc:(pr['Descrição']?.title?.[0]?.plain_text)||'',tipo:(pr['Tipo']?.select?.name)||'Gasto',categoria:catFinal,valor:pr['Valor']?.number||0,data:pr['Data']?.date?.start||today(),obs:obs};
   });
 }
 
@@ -1397,7 +1405,7 @@ async function renderRecorrentes(){
     el.innerHTML = recorrentes.map(r=>`
       <div class="rec-item">
         <div class="rec-icon" style="background:${corTipo[r.tipo]||'var(--rl)'}">
-          ${gi(r.categoria)}
+          ${gi(r.categoria,"Gasto")}
         </div>
         <div class="rec-info">
           <div class="rec-nome">${r.nome}</div>
@@ -1523,7 +1531,7 @@ function renderRelatorio(){
     topGastos.forEach(x=>{
       const pct=(x.v/maxGasto*100).toFixed(0);
       html+=`<div class="cat-bar-item">
-        <span class="cat-bar-emoji">${gi(x.cat)}</span>
+        <span class="cat-bar-emoji">${gi(x.cat,"Gasto")}</span>
         <div class="cat-bar-body">
           <div class="cat-bar-top"><span class="cat-bar-nome">${x.cat}</span><span class="cat-bar-val">${brl(x.v)}</span></div>
           <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%"></div></div>
@@ -1539,7 +1547,7 @@ function renderRelatorio(){
       const bg=t.tipo==='Receita'?'var(--vl)':'var(--rl)';
       html+=`<div class="top-item">
         <span class="top-rank">#${i+1}</span>
-        <div class="top-ic" style="background:${bg}">${gi(t.categoria)}</div>
+        <div class="top-ic" style="background:${bg}">${gi(t.categoria,t.tipo)}</div>
         <div class="top-info">
           <div class="top-desc">${t.desc}</div>
           <div class="top-meta">${t.categoria} · ${td(t.data).toLocaleDateString('pt-BR')}</div>
