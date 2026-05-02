@@ -528,7 +528,7 @@ const DB_ID='320a2557-a391-436c-92b2-c6a479c9042a';
 async function notionReq(path,method='GET',body=null){
   const tok=getToken();
   if(!tok)throw new Error('Token não configurado. Configure na aba 🔗 Notion.');
-  const url=`/.netlify/functions/notion?path=${encodeURIComponent(path)}`;
+  const url=`/api/notion?path=${encodeURIComponent(path)}`;
   const opts={method,headers:{'Content-Type':'application/json','x-notion-token':tok}};
   if(body)opts.body=JSON.stringify(body);
   const res=await fetch(url,opts);
