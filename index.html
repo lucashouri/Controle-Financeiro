@@ -828,13 +828,57 @@ async function notionQuery(){
     pages.push(...(data.results||[]));
     cursor=data.has_more?data.next_cursor:undefined;
   }while(cursor);
-  return pages.map(p=>{
-    const pr=p.properties||{};
-    const catRaw=(pr['Categoria']?.select?.name)||'';
-    const obs=(pr['Observação']?.rich_text?.[0]?.plain_text)||'';
-    // Se categoria vazia, tenta usar obs como categoria (registros importados da planilha)
-    const catFinal = catRaw || '';
-    return{nid:p.id,desc:(pr['Descrição']?.title?.[0]?.plain_text)||'',tipo:(pr['Tipo']?.select?.name)||'Gasto',categoria:catFinal,valor:pr['Valor']?.number||0,data:pr['Data']?.date?.start||today(),obs:obs};
+  // Mapeamento de nomes antigos/sem acento para nomes corretos
+  var CAT_MAP={
+    'Combustivel':'Combustível','Combustível':'Combustível',
+    'Veiculo':'Veículo','Veículo':'Veículo',
+    'Alimentacao':'Alimentação','Alimentação':'Alimentação',
+    'Pix':'Pix/Débito','Pix/Débito':'Pix/Débito','Pix Debito':'Pix/Débito',
+    'Moradia':'Moradia','Moradia ':'Moradia',
+    'Pagamento de Alunos':'Pagamento de Alunos',
+    'Pagamento Cooperativa':'Pagamento Cooperativa',
+    'Recebido':'Recebido',
+    'Tesouro Direto':'Tesouro Direto','Tesouro':'Tesouro Direto',
+    'Acoes':'Ações','Ações':'Ações','Acão':'Ações',
+    'ETFs':'ETFs','Etfs':'ETFs',
+    'FIs':'FIs','Fis':'FIs',
+    'Cartao de Credito':'Pix/Débito','Cartão de Crédito':'Pix/Débito',
+    'Caixinha':'Recebido',
+  };
+
+  return pages.map(function(p){
+    var pr=p.properties||{};
+    var catRaw=(pr['Categoria']&&pr['Categoria'].select&&pr['Categoria'].select.name)||'';
+    var obs=(pr['Observação']&&pr['Observação'].rich_text&&pr['Observação'].rich_text[0]&&pr['Observação'].rich_text[0].plain_text)||'';
+    var desc=(pr['Descrição']&&pr['Descrição'].title&&pr['Descrição'].title[0]&&pr['Descrição'].title[0].plain_text)||'';
+    var tipo=(pr['Tipo']&&pr['Tipo'].select&&pr['Tipo'].select.name)||'Gasto';
+
+    // 1. Usar categoria do Notion se existir e for válida
+    var cat = CAT_MAP[catRaw] || catRaw;
+
+    // 2. Se vazia, tentar pelo campo Observação (registros importados da planilha)
+    if(!cat && obs) cat = CAT_MAP[obs] || obs;
+
+    // 3. Se ainda vazia, inferir pela descrição
+    if(!cat){
+      var dl=desc.toLowerCase();
+      if(dl.indexOf('ação')>-1||dl.indexOf('ações')>-1||dl.indexOf('acoes')>-1) cat='Ações';
+      else if(dl.indexOf('etf')>-1) cat='ETFs';
+      else if(dl.indexOf('fi ')>-1||dl.indexOf('fis')>-1||dl.indexOf('fundo')>-1) cat='FIs';
+      else if(dl.indexOf('tesouro')>-1) cat='Tesouro Direto';
+      else if(dl.indexOf('btc')>-1||dl.indexOf('cripto')>-1||dl.indexOf('bitcoin')>-1) cat='Outros';
+      else if(dl.indexOf('combustiv')>-1||dl.indexOf('gasolina')>-1||dl.indexOf('etanol')>-1) cat='Combustível';
+      else if(dl.indexOf('alimenta')>-1||dl.indexOf('mercado')>-1||dl.indexOf('superm')>-1||dl.indexOf('restaur')>-1||dl.indexOf('pizza')>-1||dl.indexOf('padaria')>-1||dl.indexOf('lanch')>-1) cat='Alimentação';
+      else if(dl.indexOf('moradia')>-1||dl.indexOf('aluguel')>-1||dl.indexOf('condom')>-1) cat='Moradia';
+      else if(dl.indexOf('veiculo')>-1||dl.indexOf('veículo')>-1||dl.indexOf('prestação')>-1||dl.indexOf('prestacao')>-1||dl.indexOf('manutenção')>-1) cat='Veículo';
+      else if(dl.indexOf('cooperat')>-1) cat='Pagamento Cooperativa';
+      else if(dl.indexOf('aluno')>-1||dl.indexOf('escolar')>-1) cat='Pagamento de Alunos';
+    }
+
+    // 4. Se tipo for Guardado/Investimentos e sem categoria, inferir
+    if(!cat && (tipo==='Guardado'||tipo==='Investimentos'||tipo==='Investido')) cat='Outros';
+
+    return{nid:p.id,desc:desc,tipo:tipo,categoria:cat,valor:(pr['Valor']&&pr['Valor'].number)||0,data:(pr['Data']&&pr['Data'].date&&pr['Data'].date.start)||today(),obs:obs};
   });
 }
 
