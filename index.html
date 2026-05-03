@@ -138,7 +138,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .cai-btns{display:flex;gap:7px}
 .cai-btn{flex:1;padding:8px;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer}
 .cai-dep{background:var(--v);color:#fff}.cai-ret{background:var(--rl);color:var(--r)}
-.cai-hist{background:var(--card);border-radius:12px;border:1px solid var(--border);overflow:hidden;margin-bottom:12px}
+.cai-hist{background:var(--card);border-radius:12px;border:1px solid var(--border);overflow:hidden;margin-bottom:12px}.cai-hist-body{max-height:160px;overflow-y:auto}
 .cai-hist-title{padding:12px 15px;font-weight:700;font-size:13px;border-bottom:1px solid var(--bg)}
 .cai-mov{display:flex;align-items:center;gap:10px;padding:10px 15px;border-bottom:1px solid var(--bg)}
 .cai-mov:last-child{border-bottom:none}
@@ -245,6 +245,9 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .top-desc{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .top-meta{font-size:11px;color:var(--mu);margin-top:1px}
 .top-val{font-size:13px;font-weight:800;flex-shrink:0}
+.emoji-picker{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:10px;background:#F8F6F2;border-radius:10px}
+.emoji-opt{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.emoji-opt:hover{background:var(--azl);border-color:var(--az)}
 @media(max-width:480px){.g3{grid-template-columns:1fr 1fr}.g3 .card:last-child{grid-column:span 2}.wrap{padding:12px 13px 100px}.dash-saldo-val{font-size:26px}.pat-hero-val{font-size:26px}}
 </style>
 </head>
@@ -304,7 +307,6 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
   <button class="tb" data-tab="transacoes" onclick="setTab('transacoes')">📋 Transações</button>
   <button class="tb" data-tab="recorrentes" onclick="setTab('recorrentes')">🔁 Recorrentes</button>
   <button class="tb" data-tab="cats" onclick="setTab('cats')">⚙️ Categorias</button>
-  <button class="tb" data-tab="importar" onclick="setTab('importar')">📥 Importar</button>
 </div>
 
 <div class="wrap">
@@ -406,27 +408,43 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
     <div class="stcard">
       <div class="sttit">💸 Gastos</div>
       <div id="lcg"></div>
-      <div class="addrow"><input id="ncg" placeholder="Nova categoria..." onkeydown="if(event.key==='Enter')addCat('g')"/><button class="addbtn" onclick="addCat('g')">+ Adicionar</button></div>
+      <div class="emoji-picker" style="margin-bottom:8px">
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','⛽')">⛽</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','🚐')">🚐</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','📲')">📲</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','🍽️')">🍽️</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','🏠')">🏠</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','💊')">💊</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','👗')">👗</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','🎮')">🎮</button>
+      </div>
+      <div class="addrow"><input id="ncg" placeholder="Nova categoria..." onkeydown="if(event.key==='Enter')addCat('g')"/><button type="button" class="addbtn" onclick="addCat('g')">+ Adicionar</button></div>
     </div>
     <div class="stcard">
       <div class="sttit">💰 Receitas</div>
       <div id="lcr"></div>
-      <div class="addrow"><input id="ncr" placeholder="Nova categoria..." onkeydown="if(event.key==='Enter')addCat('r')"/><button class="addbtn" onclick="addCat('r')">+ Adicionar</button></div>
+      <div class="emoji-picker" style="margin-bottom:8px">
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncr','🎓')">🎓</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncr','🤝')">🤝</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncr','💵')">💵</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncr','💼')">💼</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncr','🏪')">🏪</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncr','🎁')">🎁</button>
+      </div>
+      <div class="addrow"><input id="ncr" placeholder="Nova categoria..." onkeydown="if(event.key==='Enter')addCat('r')"/><button type="button" class="addbtn" onclick="addCat('r')">+ Adicionar</button></div>
     </div>
     <div class="stcard">
       <div class="sttit">🏦 Investimentos</div>
       <div id="lcgd"></div>
-      <div class="addrow"><input id="ncgd" placeholder="Nova categoria..." onkeydown="if(event.key==='Enter')addCat('gd')"/><button class="addbtn" onclick="addCat('gd')">+ Adicionar</button></div>
-    </div>
-  </div>
-  <!-- IMPORTAR -->
-  <div id="tab-importar" style="display:none">
-    <div class="ntcard">
-      <h3>📥 Importar dados do Notion</h3>
-      <p style="font-size:13px;color:var(--mu);margin-bottom:12px;line-height:1.6">Importa todas as suas transações do Notion para o Supabase. Seus dados continuam no Notion como backup.</p>
-      <div class="fld"><label>Token da integração Notion</label><input id="imp-token" type="password" placeholder="secret_... ou ntn_..."/></div>
-      <button onclick="importarDoNotion()" id="imp-btn" style="width:100%;padding:12px;background:var(--v);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">🔄 Importar do Notion</button>
-      <div id="imp-status" style="font-size:13px;line-height:1.6"></div>
+      <div class="emoji-picker" style="margin-bottom:8px">
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd','🏦')">🏦</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd','📈')">📈</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd','💹')">💹</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd','🏢')">🏢</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd','🪙')">🪙</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd','💎')">💎</button>
+      </div>
+      <div class="addrow"><input id="ncgd" placeholder="Nova categoria..." onkeydown="if(event.key==='Enter')addCat('gd')"/><button type="button" class="addbtn" onclick="addCat('gd')">+ Adicionar</button></div>
     </div>
   </div>
 </div>
@@ -487,7 +505,18 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
     <div class="mhdr"><span class="mtit" id="cc-modal-titulo">Novo cartão</span><button class="mcls" onclick="fecharModal('ovl-cc')">×</button></div>
     <div class="fld"><label>Nome</label><input id="cc-nome" type="text" placeholder="Ex: Nubank, Inter..."/></div>
     <div class="gf">
-      <div class="fld"><label>Emoji</label><input id="cc-band" type="text" placeholder="💳" maxlength="4"/></div>
+      <div class="fld"><label>Emoji</label>
+      <div class="emoji-picker">
+        <button class="emoji-opt" onclick="setEmoji('cc-band','💳')">💳</button>
+        <button class="emoji-opt" onclick="setEmoji('cc-band','💜')">💜</button>
+        <button class="emoji-opt" onclick="setEmoji('cc-band','🟠')">🟠</button>
+        <button class="emoji-opt" onclick="setEmoji('cc-band','🔴')">🔴</button>
+        <button class="emoji-opt" onclick="setEmoji('cc-band','🟡')">🟡</button>
+        <button class="emoji-opt" onclick="setEmoji('cc-band','🟢')">🟢</button>
+        <button class="emoji-opt" onclick="setEmoji('cc-band','🔵')">🔵</button>
+        <button class="emoji-opt" onclick="setEmoji('cc-band','⚫')">⚫</button>
+      </div>
+      <input id="cc-band" type="text" placeholder="💳" maxlength="4"/></div>
       <div class="fld"><label>Cor</label><input id="cc-cor" type="color" style="height:42px;padding:4px"/></div>
     </div>
     <div class="fld"><label>Limite (R$)</label><input id="cc-limite" type="number" placeholder="0,00" min="0" step="0.01"/></div>
@@ -531,7 +560,18 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
     <div class="mhdr"><span class="mtit">Nova Caixinha</span><button class="mcls" onclick="fecharModal('ovl-nova-cai')">×</button></div>
     <div class="fld"><label>Nome da caixinha</label><input id="ncai-nome" type="text" placeholder="Ex: Reserva de emergência"/></div>
     <div class="gf">
-      <div class="fld"><label>Emoji</label><input id="ncai-emoji" type="text" placeholder="🐷" maxlength="4"/></div>
+      <div class="fld"><label>Emoji</label>
+      <div class="emoji-picker" id="ep-cai">
+        <button class="emoji-opt" onclick="setEmoji('ncai-emoji','🐷')">🐷</button>
+        <button class="emoji-opt" onclick="setEmoji('ncai-emoji','💰')">💰</button>
+        <button class="emoji-opt" onclick="setEmoji('ncai-emoji','🏦')">🏦</button>
+        <button class="emoji-opt" onclick="setEmoji('ncai-emoji','💵')">💵</button>
+        <button class="emoji-opt" onclick="setEmoji('ncai-emoji','💎')">💎</button>
+        <button class="emoji-opt" onclick="setEmoji('ncai-emoji','🎯')">🎯</button>
+        <button class="emoji-opt" onclick="setEmoji('ncai-emoji','🌟')">🌟</button>
+        <button class="emoji-opt" onclick="setEmoji('ncai-emoji','🏠')">🏠</button>
+      </div>
+      <input id="ncai-emoji" type="text" placeholder="🐷" maxlength="4"/></div>
       <div class="fld"><label>Dono (opcional)</label><input id="ncai-dono" type="text" placeholder="Ex: Lucas, Dayanna"/></div>
     </div>
     <div class="fld"><label>Meta (R$) — opcional</label><input id="ncai-meta" type="number" placeholder="0,00" min="0" step="0.01"/></div>
@@ -720,7 +760,7 @@ function navMes(d){mes+=d;if(mes>11){mes=0;ano++;}if(mes<0){mes=11;ano--;}render
 function setTab(t){
   tab=t;
   document.querySelectorAll('.tb').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
-  ['resumo','cartoes','patrimonio','graficos','transacoes','recorrentes','cats','importar'].forEach(id=>{
+  ['resumo','cartoes','patrimonio','graficos','transacoes','recorrentes','cats'].forEach(id=>{
     document.getElementById('tab-'+id).style.display=id===t?'':'none';
   });
   if(t==='patrimonio')renderPatrimonio();
@@ -828,11 +868,11 @@ function renderPatrimonio(){
     caixinhas.forEach(cx=>{
       const movs=caiMovs.filter(m=>m.caixinhaId===cx.id);
       if(!movs.length)return;
-      hist+='<div class="cai-hist"><div class="cai-hist-title">'+cx.emoji+' Histórico — '+cx.nome+'</div>';
-      movs.slice(0,10).forEach(m=>{
+      hist+='<div class="cai-hist"><div class="cai-hist-title">'+cx.emoji+' Histórico — '+cx.nome+'</div><div class="cai-hist-body">';
+      movs.slice(0,3).forEach(m=>{
         hist+='<div class="cai-mov"><div class="cai-mov-ic" style="background:'+(m.tipo==='Depósito'?'var(--vl)':'var(--rl)')+'">'+( m.tipo==='Depósito'?'📥':'📤')+'</div><div class="cai-mov-info"><div class="cai-mov-desc">'+m.desc+'</div><div class="cai-mov-meta">'+m.tipo+' · '+td(m.data).toLocaleDateString('pt-BR')+' · Saldo: '+brl(m.saldoApos)+'</div></div><span class="cai-mov-val" style="color:'+(m.tipo==='Depósito'?'var(--v)':'var(--r)')+'">'+( m.tipo==='Depósito'?'+':'-')+brl(m.valor)+'</span></div>';
       });
-      hist+='</div>';
+      hist+='</div></div>';
     });
     document.getElementById('cai-hist-block').innerHTML=hist;
   }
@@ -1280,7 +1320,6 @@ function render(){
   else if(tab==='transacoes')renderTransacoes();
   else if(tab==='recorrentes')renderRecorrentes();
   else if(tab==='cats')renderCats();
-  else if(tab==='importar'){document.getElementById('nlbl').textContent='Importar';}
 }
 
 // ── LISTENERS ─────────────────────────────────────────────
@@ -1395,6 +1434,12 @@ async function importarDoNotion(){
     statusEl.innerHTML = '<span style="color:var(--r)">❌ Erro: ' + e.message + '</span>';
   }
   btn.disabled=false; btn.textContent='🔄 Importar do Notion';
+}
+
+// ── UTILS EMOJI ───────────────────────────────────────────
+function setEmoji(inputId, emoji){
+  const el = document.getElementById(inputId);
+  if(el){ el.value = emoji; el.focus(); }
 }
 
 // ── START ──────────────────────────────────────────────────
