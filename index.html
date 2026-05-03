@@ -409,42 +409,54 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
       <div class="sttit">💸 Gastos</div>
       <div id="lcg"></div>
       <div class="emoji-picker" style="margin-bottom:8px">
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','⛽')">⛽</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','🚐')">🚐</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','📲')">📲</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','🍽️')">🍽️</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','🏠')">🏠</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','💊')">💊</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','👗')">👗</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncg','🎮')">🎮</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg-emoji','⛽')">⛽</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg-emoji','🚐')">🚐</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg-emoji','📲')">📲</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg-emoji','🍽️')">🍽️</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg-emoji','🏠')">🏠</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg-emoji','💊')">💊</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg-emoji','👗')">👗</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncg-emoji','🎮')">🎮</button>
       </div>
-      <div class="addrow"><input id="ncg" placeholder="Nova categoria..." onkeydown="if(event.key==='Enter')addCat('g')"/><button type="button" class="addbtn" onclick="addCat('g')">+ Adicionar</button></div>
+      <div class="addrow" style="align-items:center">
+        <input id="ncg-emoji" type="text" value="📌" style="width:44px;text-align:center;flex:none;font-size:18px;padding:8px 4px" maxlength="4"/>
+        <input id="ncg" placeholder="Nome da categoria..." onkeydown="if(event.key==='Enter')addCat('g')" style="flex:1"/>
+        <button type="button" class="addbtn" onclick="addCat('g')">+ Adicionar</button>
+      </div>
     </div>
     <div class="stcard">
       <div class="sttit">💰 Receitas</div>
       <div id="lcr"></div>
       <div class="emoji-picker" style="margin-bottom:8px">
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncr','🎓')">🎓</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncr','🤝')">🤝</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncr','💵')">💵</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncr','💼')">💼</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncr','🏪')">🏪</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncr','🎁')">🎁</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncr-emoji','🎓')">🎓</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncr-emoji','🤝')">🤝</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncr-emoji','💵')">💵</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncr-emoji','💼')">💼</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncr-emoji','🏪')">🏪</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncr-emoji','🎁')">🎁</button>
       </div>
-      <div class="addrow"><input id="ncr" placeholder="Nova categoria..." onkeydown="if(event.key==='Enter')addCat('r')"/><button type="button" class="addbtn" onclick="addCat('r')">+ Adicionar</button></div>
+      <div class="addrow" style="align-items:center">
+        <input id="ncr-emoji" type="text" value="📌" style="width:44px;text-align:center;flex:none;font-size:18px;padding:8px 4px" maxlength="4"/>
+        <input id="ncr" placeholder="Nome da categoria..." onkeydown="if(event.key==='Enter')addCat('r')" style="flex:1"/>
+        <button type="button" class="addbtn" onclick="addCat('r')">+ Adicionar</button>
+      </div>
     </div>
     <div class="stcard">
       <div class="sttit">🏦 Investimentos</div>
       <div id="lcgd"></div>
       <div class="emoji-picker" style="margin-bottom:8px">
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd','🏦')">🏦</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd','📈')">📈</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd','💹')">💹</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd','🏢')">🏢</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd','🪙')">🪙</button>
-        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd','💎')">💎</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd-emoji','🏦')">🏦</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd-emoji','📈')">📈</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd-emoji','💹')">💹</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd-emoji','🏢')">🏢</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd-emoji','🪙')">🪙</button>
+        <button class="emoji-opt" type="button" onclick="setEmoji('ncgd-emoji','💎')">💎</button>
       </div>
-      <div class="addrow"><input id="ncgd" placeholder="Nova categoria..." onkeydown="if(event.key==='Enter')addCat('gd')"/><button type="button" class="addbtn" onclick="addCat('gd')">+ Adicionar</button></div>
+      <div class="addrow" style="align-items:center">
+        <input id="ncgd-emoji" type="text" value="📌" style="width:44px;text-align:center;flex:none;font-size:18px;padding:8px 4px" maxlength="4"/>
+        <input id="ncgd" placeholder="Nome da categoria..." onkeydown="if(event.key==='Enter')addCat('gd')" style="flex:1"/>
+        <button type="button" class="addbtn" onclick="addCat('gd')">+ Adicionar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -631,7 +643,14 @@ let recMeses=ls.get('cf_rec_meses',[]);
 // ── UTILS ─────────────────────────────────────────────────
 const brl=v=>Math.abs(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const td=s=>new Date(s+'T12:00:00');
-const gi=(c,tipo)=>{if(ICONS[c])return ICONS[c];if(!c||c==='')return tipo==='Receita'?'💰':tipo==='Guardado'?'📦':'💸';return'📌';};
+const gi=(c,tipo)=>{
+  if(ICONS[c])return ICONS[c];
+  if(!c||c==='')return tipo==='Receita'?'💰':tipo==='Guardado'?'📦':'💸';
+  // Se a categoria começa com emoji, extrair e usar
+  const m=c.match(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u);
+  if(m)return m[0];
+  return tipo==='Receita'?'💰':tipo==='Guardado'?'📦':'💸';
+};
 const today=()=>new Date().toISOString().split('T')[0];
 const doMes=(m,a)=>trans.filter(t=>{const d=td(t.data);return d.getMonth()===m&&d.getFullYear()===a;});
 const doAno=a=>trans.filter(t=>td(t.data).getFullYear()===a);
@@ -719,7 +738,7 @@ async function carregarTudo(){
       supa.from('cartoes').select('*').order('created_at'),
       supa.from('gastos_cartao').select('*').order('data',{ascending:false}),
       supa.from('caixinhas').select('*').eq('ativa',true).order('created_at'),
-      supa.from('movimentacoes_caixinha').select('*').order('data',{ascending:false}),
+      supa.from('movimentacoes_caixinha').select('*').order('data',{ascending:false}).order('created_at',{ascending:false}),
       supa.from('recorrentes').select('*').order('dia_mes'),
     ]);
     trans=(t.data||[]).map(r=>({...r,desc:r.descricao}));
@@ -939,12 +958,17 @@ function renderCats(){
 }
 function addCat(tipo){
   const ids={g:'ncg',r:'ncr',gd:'ncgd'};
-  const v=document.getElementById(ids[tipo]).value.trim();
-  if(!v)return;
+  const emojiEl=document.getElementById(ids[tipo]+'-emoji');
+  const emoji=emojiEl?emojiEl.value.trim():'';
+  const nome=document.getElementById(ids[tipo]).value.trim();
+  if(!nome)return;
+  // Salvar como "emoji nome" se emoji diferente do padrão
+  const v=emoji&&emoji!=='📌'?emoji+' '+nome:nome;
   if(tipo==='g'){if(!catG.includes(v))catG.push(v);saveCG();}
   else if(tipo==='r'){if(!catR.includes(v))catR.push(v);saveCR();}
   else{if(!catGD.includes(v))catGD.push(v);saveCGD();}
   document.getElementById(ids[tipo]).value='';
+  if(emojiEl)emojiEl.value='📌';
   renderCats();
 }
 function rmCat(tipo,i){
