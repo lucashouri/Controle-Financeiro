@@ -304,6 +304,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
   <button class="tb" data-tab="transacoes" onclick="setTab('transacoes')">📋 Transações</button>
   <button class="tb" data-tab="recorrentes" onclick="setTab('recorrentes')">🔁 Recorrentes</button>
   <button class="tb" data-tab="cats" onclick="setTab('cats')">⚙️ Categorias</button>
+  <button class="tb" data-tab="importar" onclick="setTab('importar')">📥 Importar</button>
 </div>
 
 <div class="wrap">
@@ -333,10 +334,13 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
   <!-- PATRIMÔNIO -->
   <div id="tab-patrimonio" style="display:none">
     <div id="cai-pat-section">
-      <div class="slbl" style="margin-top:4px">🐷 Caixinhas</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;margin-bottom:10px">
+        <div class="slbl" style="margin:0">🐷 Caixinhas</div>
+        <button onclick="abrirModalNovaCaixinha()" style="padding:6px 12px;background:var(--v);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">+ Nova caixinha</button>
+      </div>
       <div id="cai-cards" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px"></div>
       <div id="cai-hist-block"></div>
-      <div id="cai-empty" style="display:none" class="empty"><div class="ei">🐷</div><p class="ep">Nenhuma caixinha ainda.<br>Adicione em breve!</p></div>
+      <div id="cai-empty" style="display:none" class="empty"><div class="ei">🐷</div><p class="ep">Nenhuma caixinha ainda.<br>Clique em <strong style="color:var(--v)">+ Nova caixinha</strong> para criar.</p></div>
     </div>
     <div id="pat-hero-block"></div>
     <div class="slbl" style="margin-top:8px">📦 Investimentos</div>
@@ -413,6 +417,16 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
       <div class="sttit">🏦 Investimentos</div>
       <div id="lcgd"></div>
       <div class="addrow"><input id="ncgd" placeholder="Nova categoria..." onkeydown="if(event.key==='Enter')addCat('gd')"/><button class="addbtn" onclick="addCat('gd')">+ Adicionar</button></div>
+    </div>
+  </div>
+  <!-- IMPORTAR -->
+  <div id="tab-importar" style="display:none">
+    <div class="ntcard">
+      <h3>📥 Importar dados do Notion</h3>
+      <p style="font-size:13px;color:var(--mu);margin-bottom:12px;line-height:1.6">Importa todas as suas transações do Notion para o Supabase. Seus dados continuam no Notion como backup.</p>
+      <div class="fld"><label>Token da integração Notion</label><input id="imp-token" type="password" placeholder="secret_... ou ntn_..."/></div>
+      <button onclick="importarDoNotion()" id="imp-btn" style="width:100%;padding:12px;background:var(--v);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">🔄 Importar do Notion</button>
+      <div id="imp-status" style="font-size:13px;line-height:1.6"></div>
     </div>
   </div>
 </div>
@@ -507,6 +521,24 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
     <div class="brow">
       <button class="bcanc" onclick="fecharModal('ovl-ccg')">Cancelar</button>
       <button class="badd" id="ccg-salvar-btn" style="background:var(--r)" onclick="salvarGasto()">+ Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVA CAIXINHA -->
+<div class="ovl" id="ovl-nova-cai" onclick="fecharSe(event,'ovl-nova-cai')">
+  <div class="mdl" style="max-width:400px">
+    <div class="mhdr"><span class="mtit">Nova Caixinha</span><button class="mcls" onclick="fecharModal('ovl-nova-cai')">×</button></div>
+    <div class="fld"><label>Nome da caixinha</label><input id="ncai-nome" type="text" placeholder="Ex: Reserva de emergência"/></div>
+    <div class="gf">
+      <div class="fld"><label>Emoji</label><input id="ncai-emoji" type="text" placeholder="🐷" maxlength="4"/></div>
+      <div class="fld"><label>Dono (opcional)</label><input id="ncai-dono" type="text" placeholder="Ex: Lucas, Dayanna"/></div>
+    </div>
+    <div class="fld"><label>Meta (R$) — opcional</label><input id="ncai-meta" type="number" placeholder="0,00" min="0" step="0.01"/></div>
+    <div class="errmsg" id="ncai-err" style="display:none"></div>
+    <div class="brow">
+      <button class="bcanc" onclick="fecharModal('ovl-nova-cai')">Cancelar</button>
+      <button class="badd" style="background:var(--v)" onclick="criarCaixinha()">🐷 Criar caixinha</button>
     </div>
   </div>
 </div>
@@ -688,7 +720,7 @@ function navMes(d){mes+=d;if(mes>11){mes=0;ano++;}if(mes<0){mes=11;ano--;}render
 function setTab(t){
   tab=t;
   document.querySelectorAll('.tb').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
-  ['resumo','cartoes','patrimonio','graficos','transacoes','recorrentes','cats'].forEach(id=>{
+  ['resumo','cartoes','patrimonio','graficos','transacoes','recorrentes','cats','importar'].forEach(id=>{
     document.getElementById('tab-'+id).style.display=id===t?'':'none';
   });
   if(t==='patrimonio')renderPatrimonio();
@@ -1023,6 +1055,33 @@ async function removerGasto(cartaoId,gastoId){
 }
 
 // ── CAIXINHAS ─────────────────────────────────────────────
+function abrirModalNovaCaixinha(){
+  document.getElementById('ncai-nome').value='';
+  document.getElementById('ncai-emoji').value='🐷';
+  document.getElementById('ncai-dono').value='';
+  document.getElementById('ncai-meta').value='';
+  document.getElementById('ncai-err').style.display='none';
+  document.getElementById('ovl-nova-cai').classList.add('open');
+  setTimeout(()=>document.getElementById('ncai-nome').focus(),120);
+}
+
+async function criarCaixinha(){
+  const nome=document.getElementById('ncai-nome').value.trim();
+  const emoji=document.getElementById('ncai-emoji').value.trim()||'🐷';
+  const dono=document.getElementById('ncai-dono').value.trim();
+  const meta=parseFloat(document.getElementById('ncai-meta').value)||0;
+  const err=document.getElementById('ncai-err');
+  if(!nome){err.textContent='Informe o nome da caixinha.';err.style.display='';return;}
+  err.style.display='none';
+  badge('🔄 Criando caixinha...','sync');
+  const {error}=await supa.from('caixinhas').insert({user_id:authUser.id,nome,emoji,dono,meta,ativa:true});
+  if(error){badge('❌ Erro: '+error.message,'err');return;}
+  fecharModal('ovl-nova-cai');
+  await carregarTudo();
+  renderPatrimonio();
+  badge('✅ Caixinha criada!','ok');
+}
+
 function abrirMovCaixinha(id,nome,emoji,tipo,saldoAtual){
   movCaiId=id;movCaiNome=nome;movCaiEmoji=emoji;movCaiTipo=tipo;movCaiSaldo=saldoAtual;
   document.getElementById('mov-cai-titulo').textContent=(tipo==='Depósito'?'+ Depositar em ':'− Retirar de ')+emoji+' '+nome;
@@ -1221,11 +1280,107 @@ function render(){
   else if(tab==='transacoes')renderTransacoes();
   else if(tab==='recorrentes')renderRecorrentes();
   else if(tab==='cats')renderCats();
+  else if(tab==='importar'){document.getElementById('nlbl').textContent='Importar';}
 }
 
 // ── LISTENERS ─────────────────────────────────────────────
 document.getElementById('ccg-val')?.addEventListener('input',function(){if(ccTipoGasto==='parcelado')atualizarPreviewParcela();});
 document.getElementById('ccg-parcelas')?.addEventListener('input',function(){atualizarPreviewParcela();});
+
+// ── IMPORTAR DO NOTION ────────────────────────────────────
+async function importarDoNotion(){
+  const token = document.getElementById('imp-token').value.trim();
+  const statusEl = document.getElementById('imp-status');
+  const btn = document.getElementById('imp-btn');
+  if(!token){statusEl.innerHTML='<span style="color:var(--r)">Cole o token do Notion primeiro.</span>';return;}
+  btn.disabled=true; btn.textContent='⏳ Importando...';
+  statusEl.innerHTML='🔄 Buscando transações no Notion...';
+
+  const PROXY = path => '/api/notion?path=' + encodeURIComponent(path);
+  const nFetch = async (path, method='GET', body=null) => {
+    const r = await fetch(PROXY(path), {
+      method,
+      headers: {'Content-Type':'application/json','x-notion-token':token},
+      body: body ? JSON.stringify(body) : undefined
+    });
+    return r.json();
+  };
+
+  try{
+    // Buscar todas as páginas do banco de Transações
+    let pages = [], cursor = undefined, total = 0;
+    do{
+      const body = {sorts:[{property:'Data',direction:'descending'}],page_size:100};
+      if(cursor) body.start_cursor = cursor;
+      const data = await nFetch('databases/320a2557-a391-436c-92b2-c6a479c9042a/query','POST',body);
+      pages.push(...(data.results||[]));
+      cursor = data.has_more ? data.next_cursor : undefined;
+      total = pages.length;
+      statusEl.innerHTML = '🔄 Buscando... ' + total + ' registros encontrados';
+    } while(cursor);
+
+    statusEl.innerHTML = '📥 Processando ' + total + ' registros...';
+
+    // Mapear registros do Notion para formato Supabase
+    const CAT_MAP = {'Combustivel':'Combustível','Pix':'Pix/Débito','PIX':'Pix/Débito','Veiculo':'Veículo','Alimentacao':'Alimentação','PG Aluno':'Pagamento de Alunos','PG Cooperativa':'Pagamento Cooperativa','Tesouro':'Tesouro Direto','Acoes':'Ações','Cartão de Crédito':'Pix/Débito'};
+
+    const inferir = (desc, obs) => {
+      if(obs && CAT_MAP[obs]) return CAT_MAP[obs];
+      if(obs && obs.length > 2 && obs !== 'Outros') return obs;
+      const dl = (desc||'').toLowerCase();
+      if(dl.includes('combustiv')||dl.includes('gasolin')||dl.includes('etanol')) return 'Combustível';
+      if(dl.includes('alimenta')||dl.includes('mercado')||dl.includes('superm')||dl.includes('restaur')||dl.includes('pizza')||dl.includes('padaria')||dl.includes('espet')||dl.includes('cafe')||dl.includes('economart')||dl.includes('villefort')||dl.includes('mart ')) return 'Alimentação';
+      if(dl.includes('tesouro')) return 'Tesouro Direto';
+      if(dl.includes('etf')) return 'ETFs';
+      if(dl.includes(' fi ')||dl.includes('fis')) return 'FIs';
+      if(dl.includes('ação')||dl.includes('ações')||dl.includes('acoes')) return 'Ações';
+      if(dl.includes('btc')||dl.includes('cripto')||dl.includes('bitcoin')) return 'Outros';
+      if(dl.includes('moradia')||dl.includes('aluguel')||dl.includes('internet')) return 'Moradia';
+      if(dl.includes('veiculo')||dl.includes('veículo')||dl.includes('prestação')) return 'Veículo';
+      if(dl.includes('cooperat')||dl.includes('coop')) return 'Pagamento Cooperativa';
+      if(dl.includes('aluno')||dl.includes('escolar')) return 'Pagamento de Alunos';
+      if(dl.includes('spotify')||dl.includes('netflix')||dl.includes('shopee')||dl.includes('jogo')) return 'Pix/Débito';
+      return obs || '';
+    };
+
+    const inserts = pages.map(p => {
+      const pr = p.properties || {};
+      const desc = pr['Descrição']?.title?.[0]?.plain_text || '';
+      const tipo = pr['Tipo']?.select?.name || 'Gasto';
+      const catRaw = pr['Categoria']?.select?.name || '';
+      const obs = pr['Observação']?.rich_text?.[0]?.plain_text || '';
+      const cat = CAT_MAP[catRaw] || catRaw || inferir(desc, obs) || '';
+      return {
+        user_id: authUser.id,
+        descricao: desc,
+        tipo: tipo === 'Investimentos' ? 'Guardado' : tipo,
+        categoria: cat,
+        valor: pr['Valor']?.number || 0,
+        data: pr['Data']?.date?.start || today(),
+        obs: obs
+      };
+    }).filter(r => r.descricao && r.valor > 0);
+
+    statusEl.innerHTML = '📤 Salvando ' + inserts.length + ' registros no Supabase...';
+
+    // Inserir em lotes de 50
+    let ok = 0, erros = 0;
+    for(let i = 0; i < inserts.length; i += 50){
+      const lote = inserts.slice(i, i+50);
+      const {error} = await supa.from('transacoes').insert(lote);
+      if(error){erros += lote.length; console.error(error);}
+      else{ok += lote.length;}
+      statusEl.innerHTML = '📤 Salvando... ' + ok + '/' + inserts.length + ' registros importados';
+    }
+
+    await carregarTudo();
+    render();
+    statusEl.innerHTML = '<div style="padding:12px;background:var(--vl);border-radius:8px;color:var(--v);font-weight:600">✅ Importação concluída!<br>' + ok + ' registros importados com sucesso.' + (erros > 0 ? '<br>⚠️ ' + erros + ' erros.' : '') + '</div>';
+  }catch(e){
+    statusEl.innerHTML = '<span style="color:var(--r)">❌ Erro: ' + e.message + '</span>';
+  }
+  btn.disabled=false; btn.textContent='🔄 Importar do Notion';
+}
 
 // ── START ──────────────────────────────────────────────────
 init();
