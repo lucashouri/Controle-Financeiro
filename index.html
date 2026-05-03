@@ -820,30 +820,9 @@ async function notionQuery(){
     pages.push(...(data.results||[]));
     cursor=data.has_more?data.next_cursor:undefined;
   }while(cursor);
-  var CAT_MAP={'Combustivel':'Combustível','Pix':'Pix/Débito','PIX':'Pix/Débito','Pix/Débito':'Pix/Débito','PIX/Débito':'Pix/Débito','Pix / Débito':'Pix/Débito','PIX / Débito':'Pix/Débito','Veiculo':'Veículo','Alimentacao':'Alimentação','PG Aluno':'Pagamento de Alunos','PG Cooperativa':'Pagamento Cooperativa','Tesouro':'Tesouro Direto','Acoes':'Ações','ETF':'ETFs','Fis':'FIs','Cartão de Crédito':'Pix/Débito','Caixinha':'Recebido'};
-  return pages.map(function(p){
-    var pr=p.properties||{};
-    var desc=(pr['Descrição']&&pr['Descrição'].title&&pr['Descrição'].title[0])?pr['Descrição'].title[0].plain_text:'';
-    var tipo=(pr['Tipo']&&pr['Tipo'].select)?pr['Tipo'].select.name:'Gasto';
-    var catRaw=(pr['Categoria']&&pr['Categoria'].select)?pr['Categoria'].select.name:'';
-    var obs=(pr['Observação']&&pr['Observação'].rich_text&&pr['Observação'].rich_text[0])?pr['Observação'].rich_text[0].plain_text:'';
-    var cat=CAT_MAP[catRaw]||catRaw||CAT_MAP[obs]||'';
-    if(!cat){
-      var dl=desc.toLowerCase();
-      if(dl.indexOf('combustiv')>-1||dl.indexOf('gasolin')>-1||dl.indexOf('etanol')>-1)cat='Combustível';
-      else if(dl.indexOf('alimenta')>-1||dl.indexOf('mercado')>-1||dl.indexOf('superm')>-1||dl.indexOf('restaur')>-1||dl.indexOf('pizza')>-1||dl.indexOf('padaria')>-1||dl.indexOf('espet')>-1||dl.indexOf('cafe')>-1||dl.indexOf('economart')>-1||dl.indexOf('villefort')>-1||dl.indexOf('mart ')>-1)cat='Alimentação';
-      else if(dl.indexOf('tesouro')>-1)cat='Tesouro Direto';
-      else if(dl.indexOf('etf')>-1)cat='ETFs';
-      else if(dl.indexOf(' fi')>-1||dl.indexOf('fis')>-1)cat='FIs';
-      else if(dl.indexOf('ação')>-1||dl.indexOf('ações')>-1||dl.indexOf('acoes')>-1)cat='Ações';
-      else if(dl.indexOf('btc')>-1||dl.indexOf('cripto')>-1||dl.indexOf('bitcoin')>-1)cat='Outros';
-      else if(dl.indexOf('moradia')>-1||dl.indexOf('aluguel')>-1||dl.indexOf('internet')>-1)cat='Moradia';
-      else if(dl.indexOf('veiculo')>-1||dl.indexOf('veículo')>-1||dl.indexOf('prestação')>-1)cat='Veículo';
-      else if(dl.indexOf('cooperat')>-1)cat='Pagamento Cooperativa';
-      else if(dl.indexOf('aluno')>-1||dl.indexOf('escolar')>-1)cat='Pagamento de Alunos';
-      else cat=obs||'Outros';
-    }
-    return{nid:p.id,desc:desc,tipo:tipo,categoria:cat,valor:(pr['Valor']&&pr['Valor'].number)||0,data:(pr['Data']&&pr['Data'].date)?pr['Data'].date.start:today(),obs:obs};
+  return pages.map(p=>{
+    const pr=p.properties||{};
+    return{nid:p.id,desc:(pr['Descrição']?.title?.[0]?.plain_text)||'',tipo:(pr['Tipo']?.select?.name)||'Gasto',categoria:(pr['Categoria']?.select?.name)||'Outros',valor:pr['Valor']?.number||0,data:pr['Data']?.date?.start||today(),obs:(pr['Observação']?.rich_text?.[0]?.plain_text)||''};
   });
 }
 
@@ -1685,6 +1664,59 @@ document.getElementById('ccg-parcelas') && document.getElementById('ccg-parcelas
   }
   // Recorrentes no Notion: referência de Pix → Pix/Débito (visual apenas)
 })();
+// ── MIGRAÇÃO AUTOMÁTICA DE CATEGORIAS ──────────────────
+(function migrarCategorias(){
+  var MAP={
+    'Combustivel':'Combustível','combustivel':'Combustível','Gasolina':'Combustível',
+    'Pix':'Pix/Débito','PIX':'Pix/Débito','Pix/Debito':'Pix/Débito','pix':'Pix/Débito',
+    'Pix / Débito':'Pix/Débito','PIX / Débito':'Pix/Débito','PIX/Débito':'Pix/Débito',
+    'Veiculo':'Veículo','veiculo':'Veículo',
+    'Alimentacao':'Alimentação','alimentacao':'Alimentação',
+    'PG Aluno':'Pagamento de Alunos','PG aluno':'Pagamento de Alunos',
+    'PG Cooperativa':'Pagamento Cooperativa','PG coop':'Pagamento Cooperativa',
+    'Tesouro':'Tesouro Direto','tesouro':'Tesouro Direto',
+    'Acoes':'Ações','acoes':'Ações','ETF':'ETFs','Fis':'FIs','fis':'FIs',
+    'Cartão de Crédito':'Pix/Débito','Caixinha':'Recebido',
+    'Investimentos':'Outros',
+  };
+  function inferir(desc, obs, tipo){
+    // 1. Tentar pelo campo obs (onde estava a categoria nos registros importados)
+    if(obs && MAP[obs]) return MAP[obs];
+    if(obs && obs.length > 2 && obs !== 'Outros') return obs;
+    // 2. Tentar pela descrição
+    var dl=(desc||'').toLowerCase();
+    if(dl.indexOf('combustiv')>-1||dl.indexOf('gasolin')>-1||dl.indexOf('etanol')>-1) return 'Combustível';
+    if(dl.indexOf('alimenta')>-1||dl.indexOf('mercado')>-1||dl.indexOf('superm')>-1||
+       dl.indexOf('restaur')>-1||dl.indexOf('pizza')>-1||dl.indexOf('padaria')>-1||
+       dl.indexOf('espet')>-1||dl.indexOf('cafe')>-1||dl.indexOf('café')>-1||
+       dl.indexOf('economart')>-1||dl.indexOf('villefort')>-1||dl.indexOf('mart ')>-1||
+       dl.indexOf('lanch')>-1||dl.indexOf('petshop')>-1) return 'Alimentação';
+    if(dl.indexOf('tesouro')>-1) return 'Tesouro Direto';
+    if(dl.indexOf('etf')>-1) return 'ETFs';
+    if(dl.indexOf(' fi ')>-1||dl.indexOf('fis')>-1||dl.indexOf('fundo')>-1) return 'FIs';
+    if(dl.indexOf('ação')>-1||dl.indexOf('ações')>-1||dl.indexOf('acoes')>-1) return 'Ações';
+    if(dl.indexOf('btc')>-1||dl.indexOf('cripto')>-1||dl.indexOf('bitcoin')>-1) return 'Outros';
+    if(dl.indexOf('moradia')>-1||dl.indexOf('aluguel')>-1||dl.indexOf('internet')>-1||
+       dl.indexOf('luz ')>-1||dl.indexOf('água')>-1) return 'Moradia';
+    if(dl.indexOf('veiculo')>-1||dl.indexOf('veículo')>-1||dl.indexOf('prestação')>-1||
+       dl.indexOf('borracha')>-1||dl.indexOf('oficina')>-1) return 'Veículo';
+    if(dl.indexOf('cooperat')>-1||dl.indexOf('coop')>-1) return 'Pagamento Cooperativa';
+    if(dl.indexOf('aluno')>-1||dl.indexOf('escolar')>-1) return 'Pagamento de Alunos';
+    if(dl.indexOf('spotify')>-1||dl.indexOf('netflix')>-1||dl.indexOf('jogo')>-1||
+       dl.indexOf('shopee')>-1) return 'Pix/Débito';
+    return '';
+  }
+  var alterado=false;
+  trans=trans.map(function(t){
+    if(!t.categoria||t.categoria===''||t.categoria==='Outros'){
+      var nova=inferir(t.desc,t.obs,t.tipo);
+      if(nova&&nova!==t.categoria){alterado=true;return Object.assign({},t,{categoria:nova});}
+    }
+    return t;
+  });
+  if(alterado){ls.set('cf_trans',trans);console.log('Categorias migradas automaticamente.');}
+})();
+
 document.getElementById('fdt').value=today();
 render();
 </script>
