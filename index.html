@@ -646,9 +646,12 @@ const td=s=>new Date(s+'T12:00:00');
 const gi=(c,tipo)=>{
   if(ICONS[c])return ICONS[c];
   if(!c||c==='')return tipo==='Receita'?'💰':tipo==='Guardado'?'📦':'💸';
-  // Se a categoria começa com emoji, extrair e usar
-  const m=c.match(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u);
-  if(m)return m[0];
+  // Se começa com caractere não-ASCII, é emoji — extrair o primeiro caractere
+  if(c.charCodeAt(0)>127){
+    // Pegar os primeiros 2 chars (emojis podem ter 2 code units)
+    const cp=c.codePointAt(0);
+    return String.fromCodePoint(cp);
+  }
   return tipo==='Receita'?'💰':tipo==='Guardado'?'📦':'💸';
 };
 const today=()=>new Date().toISOString().split('T')[0];
@@ -880,7 +883,8 @@ function renderPatrimonio(){
       cards+='<div class="cai-saldo-lbl">Saldo atual</div>';
       cards+='<div class="cai-saldo-val" style="color:'+cor+'">'+brl(cx.saldo)+'</div>';
       if(cx.meta>0)cards+='<div class="cai-meta-bar"><div class="cai-meta-fill" style="width:'+pct+'%;background:'+cor+'"></div></div><div class="cai-meta-txt">Meta: '+brl(cx.meta)+' ('+pct+'%)</div>';
-      cards+='<div class="cai-btns"><button class="cai-btn cai-dep" onclick="abrirMovCaixinha(\''+cx.id+'\',\''+cx.nome+'\',\''+cx.emoji+'\',\'Depósito\','+cx.saldo+')">+ Depositar</button><button class="cai-btn cai-ret" onclick="abrirMovCaixinha(\''+cx.id+'\',\''+cx.nome+'\',\''+cx.emoji+'\',\'Retirada\','+cx.saldo+')">− Retirar</button></div></div>';
+      cards+='<div class="cai-btns"><button class="cai-btn cai-dep" onclick="abrirMovCaixinha(\''+cx.id+'\',\''+cx.nome+'\',\''+cx.emoji+'\',\'Depósito\','+cx.saldo+')">+ Depositar</button><button class="cai-btn cai-ret" onclick="abrirMovCaixinha(\''+cx.id+'\',\''+cx.nome+'\',\''+cx.emoji+'\',\'Retirada\','+cx.saldo+')">− Retirar</button></div>';
+      cards+='<button onclick="excluirCaixinha(\''+cx.id+'\',\''+cx.nome+'\',event)" style="width:100%;margin-top:8px;padding:7px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--mu);font-size:12px;cursor:pointer" onmouseover="this.style.background=\'var(--rl)\';this.style.color=\'var(--r)\';" onmouseout="this.style.background=\'none\';this.style.color=\'var(--mu)\';">🗑️ Excluir caixinha</button></div>';
     });
     document.getElementById('cai-cards').innerHTML=cards;
     let hist='';
@@ -952,7 +956,11 @@ function renderTransacoes(){
 
 // ── RENDER CATEGORIAS ─────────────────────────────────────
 function renderCats(){
-  const mk=(arr,tipo)=>arr.map((c,i)=>'<div class="catitem"><span style="font-size:13px;font-weight:500">'+gi(c,tipo)+'  '+c+'</span><button class="catdel" onclick="rmCat(\''+tipo+'\','+i+')">×</button></div>').join('')||'<p style="color:#bbb;font-size:13px;padding:4px 0">Nenhuma categoria.</p>';
+  const mk=(arr,tipo)=>arr.map((c,i)=>{
+    // Se o nome começa com char não-ASCII (emoji), não adicionar ícone
+    const icon = (c.charCodeAt(0) > 127) ? '' : gi(c,tipo)+' ';
+    return '<div class="catitem"><span style="font-size:13px;font-weight:500">'+icon+c+'</span><button class="catdel" onclick="rmCat(\''+tipo+'\','+i+')">×</button></div>';
+  }).join('')||'<p style="color:#bbb;font-size:13px;padding:4px 0">Nenhuma categoria.</p>';
   document.getElementById('lcg').innerHTML=mk(catG,'Gasto');
   document.getElementById('lcr').innerHTML=mk(catR,'Receita');
   document.getElementById('lcgd').innerHTML=mk(catGD,'Guardado');
@@ -1130,6 +1138,20 @@ function abrirModalNovaCaixinha(){
   document.getElementById('ncai-err').style.display='none';
   document.getElementById('ovl-nova-cai').classList.add('open');
   setTimeout(()=>document.getElementById('ncai-nome').focus(),120);
+}
+
+async function excluirCaixinha(id, nome, event){
+  event.stopPropagation();
+  if(!confirm('Excluir a caixinha "'+nome+'"? Todo o histórico de movimentações também será apagado.'))return;
+  badge('🔄 Excluindo...','sync');
+  // Apagar movimentações primeiro (FK constraint)
+  await supa.from('movimentacoes_caixinha').delete().eq('caixinha_id',id);
+  // Apagar a caixinha
+  const {error}=await supa.from('caixinhas').delete().eq('id',id);
+  if(error){badge('❌ Erro: '+error.message,'err');return;}
+  await carregarTudo();
+  renderPatrimonio();
+  badge('✅ Caixinha excluída!','ok');
 }
 
 async function criarCaixinha(){
