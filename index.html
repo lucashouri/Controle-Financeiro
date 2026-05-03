@@ -138,7 +138,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .cai-btns{display:flex;gap:7px}
 .cai-btn{flex:1;padding:8px;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer}
 .cai-dep{background:var(--v);color:#fff}.cai-ret{background:var(--rl);color:var(--r)}
-.cai-hist{background:var(--card);border-radius:12px;border:1px solid var(--border);overflow:hidden;margin-bottom:12px}.cai-hist-body{max-height:160px;overflow-y:auto}
+.cai-hist{background:var(--card);border-radius:12px;border:1px solid var(--border);overflow:hidden;margin-bottom:12px}.cai-hist-body{max-height:220px;overflow-y:auto;scrollbar-width:thin}
 .cai-hist-title{padding:12px 15px;font-weight:700;font-size:13px;border-bottom:1px solid var(--bg)}
 .cai-mov{display:flex;align-items:center;gap:10px;padding:10px 15px;border-bottom:1px solid var(--bg)}
 .cai-mov:last-child{border-bottom:none}
@@ -420,7 +420,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
       </div>
       <div class="addrow" style="align-items:center">
         <input id="ncg-emoji" type="text" value="📌" style="width:44px;text-align:center;flex:none;font-size:18px;padding:8px 4px" maxlength="4"/>
-        <input id="ncg" placeholder="Nome da categoria..." onkeydown="if(event.key==='Enter')addCat('g')" style="flex:1"/>
+        <input id="ncg" placeholder="Nome (ex: Alimentação)" onkeydown="if(event.key==='Enter')addCat('g')" style="flex:1"/>
         <button type="button" class="addbtn" onclick="addCat('g')">+ Adicionar</button>
       </div>
     </div>
@@ -437,7 +437,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
       </div>
       <div class="addrow" style="align-items:center">
         <input id="ncr-emoji" type="text" value="📌" style="width:44px;text-align:center;flex:none;font-size:18px;padding:8px 4px" maxlength="4"/>
-        <input id="ncr" placeholder="Nome da categoria..." onkeydown="if(event.key==='Enter')addCat('r')" style="flex:1"/>
+        <input id="ncr" placeholder="Nome (ex: Salário)" onkeydown="if(event.key==='Enter')addCat('r')" style="flex:1"/>
         <button type="button" class="addbtn" onclick="addCat('r')">+ Adicionar</button>
       </div>
     </div>
@@ -454,7 +454,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
       </div>
       <div class="addrow" style="align-items:center">
         <input id="ncgd-emoji" type="text" value="📌" style="width:44px;text-align:center;flex:none;font-size:18px;padding:8px 4px" maxlength="4"/>
-        <input id="ncgd" placeholder="Nome da categoria..." onkeydown="if(event.key==='Enter')addCat('gd')" style="flex:1"/>
+        <input id="ncgd" placeholder="Nome (ex: Ações)" onkeydown="if(event.key==='Enter')addCat('gd')" style="flex:1"/>
         <button type="button" class="addbtn" onclick="addCat('gd')">+ Adicionar</button>
       </div>
     </div>
@@ -887,8 +887,9 @@ function renderPatrimonio(){
     caixinhas.forEach(cx=>{
       const movs=caiMovs.filter(m=>m.caixinhaId===cx.id);
       if(!movs.length)return;
-      hist+='<div class="cai-hist"><div class="cai-hist-title">'+cx.emoji+' Histórico — '+cx.nome+'</div><div class="cai-hist-body">';
-      movs.slice(0,3).forEach(m=>{
+      const totalMovs=movs.length;
+      hist+='<div class="cai-hist"><div class="cai-hist-title">'+cx.emoji+' Histórico — '+cx.nome+(totalMovs>10?' <span style="font-size:11px;color:var(--mu);font-weight:400">('+totalMovs+' no total)</span>':'')+'</div><div class="cai-hist-body">';
+      movs.slice(0,10).forEach(m=>{
         hist+='<div class="cai-mov"><div class="cai-mov-ic" style="background:'+(m.tipo==='Depósito'?'var(--vl)':'var(--rl)')+'">'+( m.tipo==='Depósito'?'📥':'📤')+'</div><div class="cai-mov-info"><div class="cai-mov-desc">'+m.desc+'</div><div class="cai-mov-meta">'+m.tipo+' · '+td(m.data).toLocaleDateString('pt-BR')+' · Saldo: '+brl(m.saldoApos)+'</div></div><span class="cai-mov-val" style="color:'+(m.tipo==='Depósito'?'var(--v)':'var(--r)')+'">'+( m.tipo==='Depósito'?'+':'-')+brl(m.valor)+'</span></div>';
       });
       hist+='</div></div>';
@@ -960,9 +961,11 @@ function addCat(tipo){
   const ids={g:'ncg',r:'ncr',gd:'ncgd'};
   const emojiEl=document.getElementById(ids[tipo]+'-emoji');
   const emoji=emojiEl?emojiEl.value.trim():'';
-  const nome=document.getElementById(ids[tipo]).value.trim();
+  // Remover qualquer emoji do início do nome digitado pelo usuário
+  let nome=document.getElementById(ids[tipo]).value.trim();
+  nome=nome.replace(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic})\s*/u,'').trim();
   if(!nome)return;
-  // Salvar como "emoji nome" se emoji diferente do padrão
+  // Combinar: emoji + nome (apenas se emoji escolhido for diferente do padrão)
   const v=emoji&&emoji!=='📌'?emoji+' '+nome:nome;
   if(tipo==='g'){if(!catG.includes(v))catG.push(v);saveCG();}
   else if(tipo==='r'){if(!catR.includes(v))catR.push(v);saveCR();}
