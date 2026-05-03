@@ -486,7 +486,9 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
     <div class="ntcard">
       <h3>🔄 Sincronização manual</h3>
       <p style="font-size:13px;color:var(--mu);margin-bottom:10px">Importa registros do Notion que ainda não estão neste dispositivo.</p>
-      <button class="synbtn" style="margin:0" onclick="syncNotion()">Sincronizar agora</button>
+      <button class="synbtn" style="margin:0;width:100%;margin-bottom:8px" onclick="syncNotion()">🔄 Sincronizar agora</button>
+      <button onclick="corrigirCategorias()" style="width:100%;padding:10px;background:var(--az);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer">🏷️ Corrigir categorias dos dados locais</button>
+      <div id="cat-fix-status" style="margin-top:8px;font-size:13px"></div>
     </div>
   </div>
 
@@ -1664,58 +1666,67 @@ document.getElementById('ccg-parcelas') && document.getElementById('ccg-parcelas
   }
   // Recorrentes no Notion: referência de Pix → Pix/Débito (visual apenas)
 })();
-// ── MIGRAÇÃO AUTOMÁTICA DE CATEGORIAS ──────────────────
-(function migrarCategorias(){
+// ── CORRIGIR CATEGORIAS ───────────────────────────────────
+function inferirCategoria(desc, obs, tipo){
   var MAP={
-    'Combustivel':'Combustível','combustivel':'Combustível','Gasolina':'Combustível',
-    'Pix':'Pix/Débito','PIX':'Pix/Débito','Pix/Debito':'Pix/Débito','pix':'Pix/Débito',
-    'Pix / Débito':'Pix/Débito','PIX / Débito':'Pix/Débito','PIX/Débito':'Pix/Débito',
+    'Combustivel':'Combustível','combustivel':'Combustível',
+    'Pix':'Pix/Débito','PIX':'Pix/Débito','pix':'Pix/Débito',
+    'Pix/Debito':'Pix/Débito','Pix / Débito':'Pix/Débito',
+    'PIX/Débito':'Pix/Débito','PIX / Débito':'Pix/Débito',
     'Veiculo':'Veículo','veiculo':'Veículo',
     'Alimentacao':'Alimentação','alimentacao':'Alimentação',
     'PG Aluno':'Pagamento de Alunos','PG aluno':'Pagamento de Alunos',
-    'PG Cooperativa':'Pagamento Cooperativa','PG coop':'Pagamento Cooperativa',
+    'PG Cooperativa':'Pagamento Cooperativa',
     'Tesouro':'Tesouro Direto','tesouro':'Tesouro Direto',
-    'Acoes':'Ações','acoes':'Ações','ETF':'ETFs','Fis':'FIs','fis':'FIs',
+    'Acoes':'Ações','acoes':'Ações','ETF':'ETFs',
+    'Fis':'FIs','fis':'FIs',
     'Cartão de Crédito':'Pix/Débito','Caixinha':'Recebido',
     'Investimentos':'Outros',
   };
-  function inferir(desc, obs, tipo){
-    // 1. Tentar pelo campo obs (onde estava a categoria nos registros importados)
-    if(obs && MAP[obs]) return MAP[obs];
-    if(obs && obs.length > 2 && obs !== 'Outros') return obs;
-    // 2. Tentar pela descrição
-    var dl=(desc||'').toLowerCase();
-    if(dl.indexOf('combustiv')>-1||dl.indexOf('gasolin')>-1||dl.indexOf('etanol')>-1) return 'Combustível';
-    if(dl.indexOf('alimenta')>-1||dl.indexOf('mercado')>-1||dl.indexOf('superm')>-1||
-       dl.indexOf('restaur')>-1||dl.indexOf('pizza')>-1||dl.indexOf('padaria')>-1||
-       dl.indexOf('espet')>-1||dl.indexOf('cafe')>-1||dl.indexOf('café')>-1||
-       dl.indexOf('economart')>-1||dl.indexOf('villefort')>-1||dl.indexOf('mart ')>-1||
-       dl.indexOf('lanch')>-1||dl.indexOf('petshop')>-1) return 'Alimentação';
-    if(dl.indexOf('tesouro')>-1) return 'Tesouro Direto';
-    if(dl.indexOf('etf')>-1) return 'ETFs';
-    if(dl.indexOf(' fi ')>-1||dl.indexOf('fis')>-1||dl.indexOf('fundo')>-1) return 'FIs';
-    if(dl.indexOf('ação')>-1||dl.indexOf('ações')>-1||dl.indexOf('acoes')>-1) return 'Ações';
-    if(dl.indexOf('btc')>-1||dl.indexOf('cripto')>-1||dl.indexOf('bitcoin')>-1) return 'Outros';
-    if(dl.indexOf('moradia')>-1||dl.indexOf('aluguel')>-1||dl.indexOf('internet')>-1||
-       dl.indexOf('luz ')>-1||dl.indexOf('água')>-1) return 'Moradia';
-    if(dl.indexOf('veiculo')>-1||dl.indexOf('veículo')>-1||dl.indexOf('prestação')>-1||
-       dl.indexOf('borracha')>-1||dl.indexOf('oficina')>-1) return 'Veículo';
-    if(dl.indexOf('cooperat')>-1||dl.indexOf('coop')>-1) return 'Pagamento Cooperativa';
-    if(dl.indexOf('aluno')>-1||dl.indexOf('escolar')>-1) return 'Pagamento de Alunos';
-    if(dl.indexOf('spotify')>-1||dl.indexOf('netflix')>-1||dl.indexOf('jogo')>-1||
-       dl.indexOf('shopee')>-1) return 'Pix/Débito';
-    return '';
-  }
-  var alterado=false;
+  // 1. Tentar pelo campo obs (onde estava a categoria nos registros importados)
+  if(obs && MAP[obs]) return MAP[obs];
+  if(obs && obs.length>2 && obs!=='Outros' && catG.concat(catR,catGD).indexOf(obs)>-1) return obs;
+  // 2. Tentar pela descrição
+  var dl=(desc||'').toLowerCase();
+  if(dl.indexOf('combustiv')>-1||dl.indexOf('gasolin')>-1||dl.indexOf('etanol')>-1) return 'Combustível';
+  if(dl.indexOf('alimenta')>-1||dl.indexOf('mercado')>-1||dl.indexOf('superm')>-1||
+     dl.indexOf('restaur')>-1||dl.indexOf('pizza')>-1||dl.indexOf('padaria')>-1||
+     dl.indexOf('espet')>-1||dl.indexOf('cafe')>-1||dl.indexOf('café')>-1||
+     dl.indexOf('economart')>-1||dl.indexOf('villefort')>-1||dl.indexOf('mart ')>-1||
+     dl.indexOf('lanch')>-1||dl.indexOf('petshop')>-1||dl.indexOf('açougue')>-1) return 'Alimentação';
+  if(dl.indexOf('tesouro')>-1) return 'Tesouro Direto';
+  if(dl.indexOf('etf')>-1) return 'ETFs';
+  if(dl.indexOf(' fi ')>-1||dl.indexOf('fis')>-1) return 'FIs';
+  if(dl.indexOf('ação')>-1||dl.indexOf('ações')>-1||dl.indexOf('acoes')>-1) return 'Ações';
+  if(dl.indexOf('btc')>-1||dl.indexOf('cripto')>-1||dl.indexOf('bitcoin')>-1) return 'Outros';
+  if(dl.indexOf('moradia')>-1||dl.indexOf('aluguel')>-1||dl.indexOf('internet')>-1||
+     dl.indexOf('luz ')>-1||dl.indexOf('água')>-1) return 'Moradia';
+  if(dl.indexOf('veiculo')>-1||dl.indexOf('veículo')>-1||dl.indexOf('prestação')>-1||
+     dl.indexOf('borracha')>-1||dl.indexOf('oficina')>-1) return 'Veículo';
+  if(dl.indexOf('cooperat')>-1||dl.indexOf('coop')>-1) return 'Pagamento Cooperativa';
+  if(dl.indexOf('aluno')>-1) return 'Pagamento de Alunos';
+  if(dl.indexOf('spotify')>-1||dl.indexOf('netflix')>-1||dl.indexOf('shopee')>-1||
+     dl.indexOf('jogo')>-1||dl.indexOf('amazon')>-1) return 'Pix/Débito';
+  if(tipo==='Receita') return 'Recebido';
+  return '';
+}
+
+function corrigirCategorias(){
+  var total=trans.length;
+  var corrigidos=0;
   trans=trans.map(function(t){
     if(!t.categoria||t.categoria===''||t.categoria==='Outros'){
-      var nova=inferir(t.desc,t.obs,t.tipo);
-      if(nova&&nova!==t.categoria){alterado=true;return Object.assign({},t,{categoria:nova});}
+      var nova=inferirCategoria(t.desc,t.obs,t.tipo);
+      if(nova){corrigidos++;return Object.assign({},t,{categoria:nova});}
     }
     return t;
   });
-  if(alterado){ls.set('cf_trans',trans);console.log('Categorias migradas automaticamente.');}
-})();
+  saveT();
+  var el=document.getElementById('cat-fix-status');
+  if(el) el.innerHTML='<div style="padding:8px;background:var(--vl);border-radius:8px;color:var(--v);font-weight:600">✅ '+corrigidos+' de '+total+' transações corrigidas!</div>';
+  render();
+  badge('✅ '+corrigidos+' categorias corrigidas!','ok');
+}
 
 document.getElementById('fdt').value=today();
 render();
