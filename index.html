@@ -1363,19 +1363,34 @@ async function importarDoNotion(){
 
     statusEl.innerHTML = '📤 Salvando ' + inserts.length + ' registros no Supabase...';
 
-    // Inserir em lotes de 50
-    let ok = 0, erros = 0;
-    for(let i = 0; i < inserts.length; i += 50){
-      const lote = inserts.slice(i, i+50);
-      const {error} = await supa.from('transacoes').insert(lote);
-      if(error){erros += lote.length; console.error(error);}
-      else{ok += lote.length;}
-      statusEl.innerHTML = '📤 Salvando... ' + ok + '/' + inserts.length + ' registros importados';
+    // Inserir um por um para não perder nenhum
+    let ok = 0, erros = 0, primeiroErro = '';
+    for(let i = 0; i < inserts.length; i++){
+      const row = inserts[i];
+      // Garantir data válida no formato YYYY-MM-DD
+      if(!row.data || !/^\d{4}-\d{2}-\d{2}/.test(row.data)) row.data = today();
+      else row.data = row.data.substring(0,10); // pegar só a data, sem hora
+      // Garantir tipo válido
+      if(!['Gasto','Receita','Guardado'].includes(row.tipo)) row.tipo = 'Gasto';
+      // Garantir valor numérico
+      if(!row.valor || isNaN(row.valor)) row.valor = 0;
+      const {error} = await supa.from('transacoes').insert(row);
+      if(error){
+        erros++;
+        if(!primeiroErro) primeiroErro = error.message;
+      } else ok++;
+      if(i%20===0) statusEl.innerHTML = '📤 Salvando... ' + ok + '/' + inserts.length + ' registros importados';
     }
+    if(primeiroErro) console.error('Primeiro erro:', primeiroErro);
 
     await carregarTudo();
     render();
-    statusEl.innerHTML = '<div style="padding:12px;background:var(--vl);border-radius:8px;color:var(--v);font-weight:600">✅ Importação concluída!<br>' + ok + ' registros importados com sucesso.' + (erros > 0 ? '<br>⚠️ ' + erros + ' erros.' : '') + '</div>';
+    const corStatus = ok > 0 ? 'var(--v)' : 'var(--r)';
+    const bgStatus = ok > 0 ? 'var(--vl)' : 'var(--rl)';
+    statusEl.innerHTML = '<div style="padding:12px;background:'+bgStatus+';border-radius:8px;color:'+corStatus+';font-weight:600">'+
+      (ok > 0 ? '✅ ' : '❌ ') + ok + ' registros importados com sucesso.' +
+      (erros > 0 ? '<br>⚠️ ' + erros + ' erros.' + (primeiroErro ? '<br><small style=\'font-weight:400\'>' + primeiroErro + '</small>' : '') : '') +
+      '</div>';
   }catch(e){
     statusEl.innerHTML = '<span style="color:var(--r)">❌ Erro: ' + e.message + '</span>';
   }
