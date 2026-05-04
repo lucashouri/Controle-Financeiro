@@ -12,6 +12,23 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root{--bg:#F5F3EF;--card:#FFF;--border:#E8E4DC;--v:#16A34A;--vl:#DCFCE7;--r:#DC2626;--rl:#FEE2E2;--az:#2563EB;--azl:#DBEAFE;--am:#D97706;--aml:#FEF3C7;--tx:#1A1A1A;--mu:#6B6B6B;--lb:#9A948F}
+.dark{--bg:#0F172A;--card:#1E293B;--border:#334155;--vl:#14532D;--rl:#450A0A;--azl:#1E3A5F;--aml:#451A03;--tx:#F1F5F9;--mu:#94A3B8;--lb:#64748B}
+.dark .dash-hero,.dark .cc-hero,.dark .pat-hero{background:linear-gradient(135deg,#020617 0%,#0F172A 50%,#1E3A5F 100%)}
+.dark .auth-box{background:#1E293B;color:#F1F5F9}
+.dark .auth-fld input{background:#0F172A;border-color:#334155;color:#F1F5F9}
+.dark .auth-fld label{color:#94A3B8}
+.dark .ttgl,.dark .cc-tipo-toggle{background:#0F172A}
+.dark .fld input,.dark .fld select{background:#0F172A;border-color:#334155;color:#F1F5F9}
+.dark .bcanc{background:#334155;color:#94A3B8}
+.dark .ftb{border-color:#334155;color:#94A3B8}
+.dark .ftb.on{background:#F1F5F9;color:#0F172A}
+.dark .cc-progress-track,.dark .cai-meta-bar{background:#334155}
+.dark .emoji-picker,.dark .color-picker{background:#0F172A}
+.dark .emoji-opt{background:#1E293B;border-color:#334155}
+.dark .addrow input{background:#0F172A;border-color:#334155;color:#F1F5F9}
+.dark .ano-card,.dark .stcard,.dark .ntcard,.dark .chcrd,.dark .cai-hist,.dark .dash-sec,.dark .lcrd,.dark .cc-card,.dark .cai-card{background:#1E293B;border-color:#334155}
+.dark .rec-tog{color:#fff}
+.dark .pw-eye{color:#94A3B8}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--tx);min-height:100dvh;overscroll-behavior:none}
 button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
@@ -316,6 +333,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
       <span class="nl" id="nlbl"></span>
       <button class="nb" onclick="navMes(1)">›</button>
     </div>
+    <button onclick="toggleTema()" id="tema-btn" style="padding:6px 10px;border:1px solid var(--border);background:none;border-radius:8px;font-size:16px;cursor:pointer" title="Alternar tema">🌙</button>
     <button class="logout-btn" onclick="logout()">Sair</button>
   </div>
 </div>
@@ -426,6 +444,25 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 
   <!-- CATEGORIAS -->
   <div id="tab-cats" style="display:none">
+    <div class="stcard" style="border-color:var(--az)">
+      <div class="sttit" style="display:flex;justify-content:space-between;align-items:center">
+        <span>🌙 Aparência e Notificações</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
+        <div>
+          <div style="font-size:13px;font-weight:600">Tema escuro</div>
+          <div style="font-size:12px;color:var(--mu)">Muda a aparência do app</div>
+        </div>
+        <button onclick="toggleTema()" style="padding:7px 16px;border:1px solid var(--border);background:var(--bg);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">🌙 Alternar</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
+        <div>
+          <div style="font-size:13px;font-weight:600">🔔 Alertas de vencimento</div>
+          <div style="font-size:12px;color:var(--mu)">Aviso quando fatura está próxima do vencimento</div>
+        </div>
+        <button onclick="pedirPermissaoNotificacao()" style="padding:7px 16px;border:1px solid var(--border);background:var(--bg);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Ativar</button>
+      </div>
+    </div>
     <div class="stcard">
       <div class="sttit">💸 Gastos</div>
       <div id="lcg"></div>
@@ -817,6 +854,7 @@ async function carregarTudo(){
     const todosGastos=gc.data||[];
     cartoes=(c.data||[]).map(r=>({
       id:r.id,nome:r.nome,bandeira:r.bandeira,limite:r.limite,cor:r.cor,
+      diaVenc:r.dia_vencimento||10,
       gastos:todosGastos.filter(g=>g.cartao_id===r.id).map(g=>({
         id:g.id,desc:g.descricao,valor:g.valor,data:g.data,obs:g.obs||'',
         parcela:g.parcela,totalParcelas:g.total_parcelas,grupoId:g.grupo_id
@@ -1683,8 +1721,56 @@ function setCorCartao(cor){
   });
 }
 
+// ── TEMA ESCURO ───────────────────────────────────────────
+function toggleTema(){
+  const dark=document.documentElement.classList.toggle('dark');
+  ls.set('cf_tema', dark?'dark':'light');
+  document.getElementById('tema-btn').textContent=dark?'☀️':'🌙';
+}
+
+function initTema(){
+  const saved=ls.get('cf_tema','light');
+  if(saved==='dark'){
+    document.documentElement.classList.add('dark');
+    const btn=document.getElementById('tema-btn');
+    if(btn)btn.textContent='☀️';
+  }
+}
+
+// ── NOTIFICAÇÕES DE VENCIMENTO ────────────────────────────
+function verificarVencimentos(){
+  if(!('Notification' in window))return;
+  const hoje=new Date();
+  const diaHoje=hoje.getDate();
+  cartoes.forEach(function(cc){
+    const venc=cc.diaVenc||10;
+    const diasRestantes=venc-diaHoje;
+    // Notificar se vence nos próximos 3 dias e tem gastos em aberto
+    const gastosAbertos=gastoEmAberto(cc);
+    if(gastosAbertos>0&&diasRestantes>=0&&diasRestantes<=3){
+      const msg=diasRestantes===0
+        ?'Fatura de '+cc.nome+' vence HOJE! '+brl(gastosAbertos)
+        :'Fatura de '+cc.nome+' vence em '+diasRestantes+' dia'+(diasRestantes>1?'s':'')+'! '+brl(gastosAbertos);
+      // Mostrar badge de alerta no app
+      badge('🔔 '+msg,'err');
+    }
+  });
+}
+
+async function pedirPermissaoNotificacao(){
+  if(!('Notification' in window)){badge('Notificações não suportadas neste navegador','err');return;}
+  const perm=await Notification.requestPermission();
+  if(perm==='granted'){
+    badge('✅ Notificações ativadas!','ok');
+    ls.set('cf_notif','on');
+  }else{
+    badge('❌ Permissão negada. Ative nas configurações do navegador.','err');
+  }
+}
+
 // ── START ──────────────────────────────────────────────────
-init();
+initTema();
+init().then(function(){ verificarVencimentos(); });
 </script>
 </body>
 </html>
