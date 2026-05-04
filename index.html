@@ -1125,6 +1125,14 @@ function rmCat(tipo,i){
 function totalGastoCC(cc){return cc.gastos.reduce((s,g)=>s+g.valor,0);}
 function corProgresso(pct){return pct>=90?'#EF4444':pct>=70?'#F59E0B':'#16A34A';}
 
+// Gastos em aberto (faturas pagas liberam limite)
+function gastoEmAberto(cc){
+  return cc.gastos.filter(function(g){
+    const d=td(g.data);
+    return !faturasPagas.some(function(f){return f.cartao_id===cc.id&&f.mes===d.getMonth()&&f.ano===d.getFullYear();});
+  }).reduce(function(s,g){return s+g.valor;},0);
+}
+
 function renderCartoes(){
   document.getElementById('nlbl').textContent=MESES[mes]+' '+ano;
   const totalLimite=cartoes.reduce((s,cc)=>s+cc.limite,0);
@@ -1135,13 +1143,6 @@ function renderCartoes(){
     return s+cc.gastos.filter(g=>{const d=td(g.data);return d.getMonth()===mes&&d.getFullYear()===ano;}).reduce((ss,g)=>ss+g.valor,0);
   },0);
   // Disponível real = soma dos disponíveis de cada cartão (limite - todos os gastos)
-  // Disponível real: limite - gastos de faturas em aberto (pagas não contam)
-  function gastoEmAberto(cc){
-    return cc.gastos.filter(function(g){
-      const d=td(g.data);
-      return !faturasPagas.some(function(f){return f.cartao_id===cc.id&&f.mes===d.getMonth()&&f.ano===d.getFullYear();});
-    }).reduce(function(s,g){return s+g.valor;},0);
-  }
   const totalDispReal=cartoes.reduce((s,cc)=>s+(cc.limite-gastoEmAberto(cc)),0);
   let hero='<div class="cc-hero"><div class="cc-hero-lbl">Gastos em '+MESES[mes]+'</div><div class="cc-hero-val">'+brl(totalGastoMes)+'</div><div class="cc-hero-sub">de '+brl(totalLimite)+' em limites</div><div class="cc-hero-pills"><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Limite total</div><div class="cc-hero-pill-val">'+brl(totalLimite)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Disponível real</div><div class="cc-hero-pill-val" style="color:'+(totalDispReal>=0?'#86EFAC':'#FCA5A5')+'">'+brl(totalDispReal)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Cartões</div><div class="cc-hero-pill-val">'+cartoes.length+'</div></div></div></div>';
   document.getElementById('cc-hero-block').innerHTML=hero;
@@ -1742,22 +1743,42 @@ function initTema(){
 
 // ── NOTIFICAÇÕES DE VENCIMENTO ────────────────────────────
 function verificarVencimentos(){
-  if(!('Notification' in window))return;
   const hoje=new Date();
   const diaHoje=hoje.getDate();
+  const alertas=[];
   cartoes.forEach(function(cc){
     const venc=cc.diaVenc||10;
     const diasRestantes=venc-diaHoje;
-    // Notificar se vence nos próximos 3 dias e tem gastos em aberto
     const gastosAbertos=gastoEmAberto(cc);
     if(gastosAbertos>0&&diasRestantes>=0&&diasRestantes<=3){
       const msg=diasRestantes===0
-        ?'Fatura de '+cc.nome+' vence HOJE! '+brl(gastosAbertos)
-        :'Fatura de '+cc.nome+' vence em '+diasRestantes+' dia'+(diasRestantes>1?'s':'')+'! '+brl(gastosAbertos);
-      // Mostrar badge de alerta no app
-      badge('🔔 '+msg,'err');
+        ?'🔔 '+cc.nome+' vence HOJE! '+brl(gastosAbertos)
+        :'🔔 '+cc.nome+' vence em '+diasRestantes+' dia'+(diasRestantes>1?'s':'')+'! '+brl(gastosAbertos);
+      alertas.push(msg);
     }
   });
+  if(alertas.length===0)return;
+  // Mostrar alerta visual fixo no topo do app
+  const existing=document.getElementById('venc-alert');
+  if(existing)existing.remove();
+  const div=document.createElement('div');
+  div.id='venc-alert';
+  div.style.cssText='position:fixed;top:0;left:0;right:0;z-index:200;background:#DC2626;color:#fff;padding:10px 16px;font-size:13px;font-weight:600;display:flex;flex-direction:column;gap:4px;box-shadow:0 4px 12px rgba(0,0,0,.3)';
+  alertas.forEach(function(msg){
+    const p=document.createElement('div');
+    p.textContent=msg;
+    div.appendChild(p);
+  });
+  const close=document.createElement('button');
+  close.textContent='✕ Fechar';
+  close.style.cssText='background:none;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;margin-top:4px;align-self:flex-end';
+  close.onclick=function(){div.remove();};
+  div.appendChild(close);
+  document.body.appendChild(div);
+  // Tentar notificação nativa também
+  if('Notification' in window&&Notification.permission==='granted'){
+    alertas.forEach(function(msg){new Notification('Controle Financeiro',{body:msg,icon:'/icon.svg'});});
+  }
 }
 
 async function pedirPermissaoNotificacao(){
