@@ -207,6 +207,13 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .cc-tipo-toggle{display:flex;background:#F4F2EE;border-radius:10px;padding:3px;margin-bottom:14px;gap:3px}
 .cc-tipo-btn{flex:1;padding:7px;border:none;border-radius:8px;font-size:13px;font-weight:600;background:transparent;color:var(--mu);cursor:pointer}
 .cc-tipo-btn.on{background:var(--r);color:#fff}
+.fatura-badge{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;margin-top:10px;width:100%}
+.fatura-badge.paga{background:var(--vl);color:var(--v)}
+.fatura-badge.aberta{background:var(--aml);color:var(--am)}
+.fatura-btn{width:100%;padding:9px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px}
+.fatura-btn.pagar{background:var(--v);color:#fff}
+.fatura-btn.estornar{background:#F4F2EE;color:var(--mu);border:1px solid var(--border);font-size:12px;padding:6px}
+.cc-venc{font-size:11px;color:var(--mu);margin-top:2px}
 .cc-tipo-btn.on-parc{background:var(--az);color:#fff}
 .dash-hero{border-radius:20px;padding:22px 20px 20px;margin-bottom:16px;position:relative;overflow:hidden;background:linear-gradient(135deg,#0F172A 0%,#1E3A5F 50%,#1E40AF 100%)}
 .dash-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.04)}
@@ -540,7 +547,10 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
       <input id="cc-band" type="text" placeholder="💳" maxlength="4"/></div>
       <div class="fld"><label>Cor</label><input id="cc-cor" type="color" style="height:42px;padding:4px"/></div>
     </div>
-    <div class="fld"><label>Limite (R$)</label><input id="cc-limite" type="number" placeholder="0,00" min="0" step="0.01"/></div>
+    <div class="gf">
+      <div class="fld"><label>Limite (R$)</label><input id="cc-limite" type="number" placeholder="0,00" min="0" step="0.01"/></div>
+      <div class="fld"><label>Dia vencimento</label><input id="cc-venc" type="number" placeholder="10" min="1" max="31"/></div>
+    </div>
     <div class="errmsg" id="cc-modal-err" style="display:none"></div>
     <div class="brow">
       <button class="bcanc" onclick="fecharModal('ovl-cc')">Cancelar</button>
@@ -571,6 +581,21 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
     <div class="brow">
       <button class="bcanc" onclick="fecharModal('ovl-ccg')">Cancelar</button>
       <button class="badd" id="ccg-salvar-btn" style="background:var(--r)" onclick="salvarGasto()">+ Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAGAR FATURA -->
+<div class="ovl" id="ovl-fatura" onclick="fecharSe(event,'ovl-fatura')">
+  <div class="mdl" style="max-width:400px">
+    <div class="mhdr"><span class="mtit" id="fat-titulo">Pagar fatura</span><button class="mcls" onclick="fecharModal('ovl-fatura')">×</button></div>
+    <div style="font-size:13px;color:var(--mu);margin-bottom:14px" id="fat-info"></div>
+    <div class="fld"><label>Valor pago (R$)</label><input id="fat-valor" type="number" min="0" step="0.01"/></div>
+    <div class="fld"><label>Data do pagamento</label><input id="fat-data" type="date"/></div>
+    <div class="errmsg" id="fat-err" style="display:none"></div>
+    <div class="brow">
+      <button class="bcanc" onclick="fecharModal('ovl-fatura')">Cancelar</button>
+      <button class="badd" style="background:var(--v)" onclick="confirmarPagamento()">✅ Confirmar pagamento</button>
     </div>
   </div>
 </div>
@@ -648,6 +673,7 @@ let ccEditId=null,ccTipoGasto='avista';
 let ccGastoCartaoId=null,ccGastoId=null;
 let movCaiId='',movCaiNome='',movCaiEmoji='',movCaiTipo='',movCaiSaldo=0;
 let recMeses=ls.get('cf_rec_meses',[]);
+let faturasPagas=[];
 
 // ── UTILS ─────────────────────────────────────────────────
 const brl=v=>Math.abs(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -753,15 +779,17 @@ async function carregarPerfil(){
 async function carregarTudo(){
   showLoading(true);
   try{
-    const [t,c,gc,cai,mov,rec]=await Promise.all([
+    const [t,c,gc,cai,mov,rec,fat]=await Promise.all([
       supa.from('transacoes').select('*').order('data',{ascending:false}).order('created_at',{ascending:false}),
       supa.from('cartoes').select('*').order('created_at'),
       supa.from('gastos_cartao').select('*').order('data',{ascending:false}),
       supa.from('caixinhas').select('*').eq('ativa',true).order('created_at'),
       supa.from('movimentacoes_caixinha').select('*').order('data',{ascending:false}).order('created_at',{ascending:false}),
       supa.from('recorrentes').select('*').order('dia_mes'),
+      supa.from('faturas_pagas').select('*'),
     ]);
     trans=(t.data||[]).map(r=>({...r,desc:r.descricao}));
+    faturasPagas=fat.data||[];
     const todosGastos=gc.data||[];
     cartoes=(c.data||[]).map(r=>({
       id:r.id,nome:r.nome,bandeira:r.bandeira,limite:r.limite,cor:r.cor,
@@ -1042,7 +1070,14 @@ function renderCartoes(){
     return s+cc.gastos.filter(g=>{const d=td(g.data);return d.getMonth()===mes&&d.getFullYear()===ano;}).reduce((ss,g)=>ss+g.valor,0);
   },0);
   // Disponível real = soma dos disponíveis de cada cartão (limite - todos os gastos)
-  const totalDispReal=cartoes.reduce((s,cc)=>s+(cc.limite-totalGastoCC(cc)),0);
+  // Disponível real: limite - gastos de faturas em aberto (pagas não contam)
+  function gastoEmAberto(cc){
+    return cc.gastos.filter(function(g){
+      const d=td(g.data);
+      return !faturasPagas.some(function(f){return f.cartao_id===cc.id&&f.mes===d.getMonth()&&f.ano===d.getFullYear();});
+    }).reduce(function(s,g){return s+g.valor;},0);
+  }
+  const totalDispReal=cartoes.reduce((s,cc)=>s+(cc.limite-gastoEmAberto(cc)),0);
   let hero='<div class="cc-hero"><div class="cc-hero-lbl">Gastos em '+MESES[mes]+'</div><div class="cc-hero-val">'+brl(totalGastoMes)+'</div><div class="cc-hero-sub">de '+brl(totalLimite)+' em limites</div><div class="cc-hero-pills"><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Limite total</div><div class="cc-hero-pill-val">'+brl(totalLimite)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Disponível real</div><div class="cc-hero-pill-val" style="color:'+(totalDispReal>=0?'#86EFAC':'#FCA5A5')+'">'+brl(totalDispReal)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Cartões</div><div class="cc-hero-pill-val">'+cartoes.length+'</div></div></div></div>';
   document.getElementById('cc-hero-block').innerHTML=hero;
   let html='';
@@ -1066,7 +1101,19 @@ function renderCartoes(){
       });
       html+='</div>';
     }else{html+='<div style="font-size:12px;color:var(--mu);text-align:center;padding:6px 0">Sem gastos em '+MESES[mes]+'</div>';}
-    html+='<button class="cc-add-btn" onclick="abrirModalGasto(\''+cc.id+'\')">+ Adicionar gasto em '+cc.nome+'</button></div>';
+    // Fatura do mês
+    const faturaMes=faturasPagas.find(function(f){return f.cartao_id===cc.id&&f.mes===mes&&f.ano===ano;});
+    if(gastosMes.length>0||faturaMes){
+      if(faturaMes){
+        html+='<div class="fatura-badge paga">✅ Fatura de '+MESES[mes]+' paga em '+td(faturaMes.data_pagamento).toLocaleDateString('pt-BR')+'</div>';
+        html+='<button class="fatura-btn estornar" onclick="estornarFatura(\''+cc.id+'\','+mes+','+ano+')">↩ Desfazer pagamento</button>';
+      }else{
+        const totalFatura=gastosMes.reduce(function(s,g){return s+g.valor;},0);
+        html+='<div class="fatura-badge aberta">⚠️ Fatura em aberto: '+brl(totalFatura)+'</div>';
+        html+='<button class="fatura-btn pagar" onclick="pagarFatura(\''+cc.id+'\','+mes+','+ano+','+totalFatura+')">💳 Pagar fatura de '+MESES[mes]+'</button>';
+      }
+    }
+    html+='<button class="cc-add-btn" style="margin-top:8px" onclick="abrirModalGasto(\''+cc.id+'\')">+ Adicionar gasto em '+cc.nome+'</button></div>';
   });
   document.getElementById('cc-lista').innerHTML=html;
 }
@@ -1079,6 +1126,7 @@ function abrirModalCartao(id){
   document.getElementById('cc-band').value=cc?.bandeira||'💳';
   document.getElementById('cc-limite').value=cc?.limite||'';
   document.getElementById('cc-cor').value=cc?.cor||'#6366F1';
+  document.getElementById('cc-venc').value=cc?.diaVenc||10;
   document.getElementById('cc-modal-err').style.display='none';
   document.getElementById('ovl-cc').classList.add('open');
   setTimeout(()=>document.getElementById('cc-nome').focus(),120);
@@ -1093,8 +1141,9 @@ async function salvarCartao(){
   if(!nome){err.textContent='Informe o nome.';err.style.display='';return;}
   if(!lim||lim<=0){err.textContent='Informe um limite válido.';err.style.display='';return;}
   err.style.display='none';badge('🔄 Salvando...','sync');
-  if(ccEditId){await supa.from('cartoes').update({nome,bandeira:band,limite:lim,cor}).eq('id',ccEditId);}
-  else{await supa.from('cartoes').insert({user_id:authUser.id,nome,bandeira:band,limite:lim,cor});}
+  const venc=parseInt(document.getElementById('cc-venc').value)||10;
+  if(ccEditId){await supa.from('cartoes').update({nome,bandeira:band,limite:lim,cor,dia_vencimento:venc}).eq('id',ccEditId);}
+  else{await supa.from('cartoes').insert({user_id:authUser.id,nome,bandeira:band,limite:lim,cor,dia_vencimento:venc});}
   fecharModal('ovl-cc');await carregarTudo();renderCartoes();badge('✅ Cartão salvo!','ok');
 }
 
@@ -1185,6 +1234,51 @@ function abrirModalNovaCaixinha(){
   document.getElementById('ncai-err').style.display='none';
   document.getElementById('ovl-nova-cai').classList.add('open');
   setTimeout(()=>document.getElementById('ncai-nome').focus(),120);
+}
+
+// ── FATURAS DE CARTÃO ─────────────────────────────────────
+let fatCartaoId='', fatMes=0, fatAno=0, fatValorTotal=0;
+
+function pagarFatura(cartaoId, m, a, valorTotal){
+  fatCartaoId=cartaoId; fatMes=m; fatAno=a; fatValorTotal=valorTotal;
+  const cc=cartoes.find(x=>x.id===cartaoId);
+  document.getElementById('fat-titulo').textContent='Pagar fatura — '+(cc?.nome||'');
+  document.getElementById('fat-info').textContent='Fatura de '+MESES[m]+'/'+a+' no valor de '+brl(valorTotal)+'. Confirme o valor e a data do pagamento.';
+  document.getElementById('fat-valor').value=valorTotal.toFixed(2);
+  document.getElementById('fat-data').value=today();
+  document.getElementById('fat-err').style.display='none';
+  document.getElementById('ovl-fatura').classList.add('open');
+  setTimeout(()=>document.getElementById('fat-valor').focus(),120);
+}
+
+async function confirmarPagamento(){
+  const valor=parseFloat(document.getElementById('fat-valor').value);
+  const data=document.getElementById('fat-data').value;
+  const err=document.getElementById('fat-err');
+  if(!valor||valor<=0){err.textContent='Informe o valor pago.';err.style.display='';return;}
+  if(!data){err.textContent='Informe a data do pagamento.';err.style.display='';return;}
+  err.style.display='none';
+  badge('🔄 Registrando pagamento...','sync');
+  const {error}=await supa.from('faturas_pagas').upsert({
+    cartao_id:fatCartaoId, user_id:authUser.id,
+    mes:fatMes, ano:fatAno,
+    valor_pago:valor, data_pagamento:data
+  },{onConflict:'cartao_id,mes,ano'});
+  if(error){badge('❌ Erro: '+error.message,'err');return;}
+  fecharModal('ovl-fatura');
+  await carregarTudo();
+  renderCartoes();
+  badge('✅ Fatura paga! Limite liberado.','ok');
+}
+
+async function estornarFatura(cartaoId, m, a){
+  const cc=cartoes.find(x=>x.id===cartaoId);
+  if(!confirm('Desfazer o pagamento da fatura de '+MESES[m]+'/'+a+' do '+cc?.nome+'?'))return;
+  badge('🔄 Desfazendo...','sync');
+  await supa.from('faturas_pagas').delete().eq('cartao_id',cartaoId).eq('mes',m).eq('ano',a);
+  await carregarTudo();
+  renderCartoes();
+  badge('↩ Pagamento desfeito.','ok');
 }
 
 async function excluirCaixinha(id, nome, event){
