@@ -166,10 +166,10 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .cc-hero-lbl{font-size:11px;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
 .cc-hero-val{font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:2px}
 .cc-hero-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:16px}
-.cc-hero-pills{display:flex;gap:8px;flex-wrap:wrap}
-.cc-hero-pill{flex:1;min-width:80px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:9px 11px}
-.cc-hero-pill-lbl{font-size:10px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
-.cc-hero-pill-val{font-size:14px;font-weight:700;color:#fff}
+.cc-hero-pills{display:flex;gap:8px;flex-wrap:nowrap;align-items:stretch}
+.cc-hero-pill{flex:1;min-width:80px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;align-items:flex-start}
+.cc-hero-pill-lbl{font-size:10px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;white-space:nowrap}
+.cc-hero-pill-val{font-size:13px;font-weight:700;color:#fff;word-break:break-word;line-height:1.2}
 .cc-card{background:var(--card);border-radius:16px;border:1px solid var(--border);padding:16px;margin-bottom:12px;position:relative;overflow:hidden}
 .cc-card-stripe{position:absolute;top:0;left:0;right:0;height:4px;border-radius:4px 4px 0 0}
 .cc-card-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
@@ -207,6 +207,11 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .cc-tipo-toggle{display:flex;background:#F4F2EE;border-radius:10px;padding:3px;margin-bottom:14px;gap:3px}
 .cc-tipo-btn{flex:1;padding:7px;border:none;border-radius:8px;font-size:13px;font-weight:600;background:transparent;color:var(--mu);cursor:pointer}
 .cc-tipo-btn.on{background:var(--r);color:#fff}
+.color-picker{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.color-opt{width:36px;height:36px;border-radius:10px;border:3px solid transparent;cursor:pointer;transition:transform .15s,border-color .15s}
+.color-opt:hover{transform:scale(1.15)}
+.color-opt.selected{border-color:var(--tx);transform:scale(1.1)}
+.color-preview{width:36px;height:36px;border-radius:10px;border:2px solid var(--border);flex-shrink:0}
 .fatura-badge{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;margin-top:10px;width:100%}
 .fatura-badge.paga{background:var(--vl);color:var(--v)}
 .fatura-badge.aberta{background:var(--aml);color:var(--am)}
@@ -532,8 +537,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
   <div class="mdl" style="max-width:400px">
     <div class="mhdr"><span class="mtit" id="cc-modal-titulo">Novo cartão</span><button class="mcls" onclick="fecharModal('ovl-cc')">×</button></div>
     <div class="fld"><label>Nome</label><input id="cc-nome" type="text" placeholder="Ex: Nubank, Inter..."/></div>
-    <div class="gf">
-      <div class="fld"><label>Emoji</label>
+    <div class="fld"><label>Emoji</label>
       <div class="emoji-picker">
         <button class="emoji-opt" onclick="setEmoji('cc-band','💳')">💳</button>
         <button class="emoji-opt" onclick="setEmoji('cc-band','💜')">💜</button>
@@ -544,8 +548,28 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
         <button class="emoji-opt" onclick="setEmoji('cc-band','🔵')">🔵</button>
         <button class="emoji-opt" onclick="setEmoji('cc-band','⚫')">⚫</button>
       </div>
-      <input id="cc-band" type="text" placeholder="💳" maxlength="4"/></div>
-      <div class="fld"><label>Cor</label><input id="cc-cor" type="color" style="height:42px;padding:4px"/></div>
+      <input id="cc-band" type="text" placeholder="💳" maxlength="4"/>
+    </div>
+    <div class="fld"><label>Cor do cartão</label>
+      <div class="color-picker" id="cc-cor-picker">
+        <div class="color-opt" style="background:#8B5CF6" data-cor="#8B5CF6" onclick="setCorCartao('#8B5CF6')" title="Roxo (Nubank)"></div>
+        <div class="color-opt" style="background:#F97316" data-cor="#F97316" onclick="setCorCartao('#F97316')" title="Laranja (Inter)"></div>
+        <div class="color-opt" style="background:#EF4444" data-cor="#EF4444" onclick="setCorCartao('#EF4444')" title="Vermelho (Bradesco)"></div>
+        <div class="color-opt" style="background:#3B82F6" data-cor="#3B82F6" onclick="setCorCartao('#3B82F6')" title="Azul (Caixa)"></div>
+        <div class="color-opt" style="background:#F59E0B" data-cor="#F59E0B" onclick="setCorCartao('#F59E0B')" title="Amarelo (Santander)"></div>
+        <div class="color-opt" style="background:#16A34A" data-cor="#16A34A" onclick="setCorCartao('#16A34A')" title="Verde"></div>
+        <div class="color-opt" style="background:#EC4899" data-cor="#EC4899" onclick="setCorCartao('#EC4899')" title="Rosa"></div>
+        <div class="color-opt" style="background:#6366F1" data-cor="#6366F1" onclick="setCorCartao('#6366F1')" title="Índigo"></div>
+        <div class="color-opt" style="background:#14B8A6" data-cor="#14B8A6" onclick="setCorCartao('#14B8A6')" title="Turquesa"></div>
+        <div class="color-opt" style="background:#64748B" data-cor="#64748B" onclick="setCorCartao('#64748B')" title="Cinza"></div>
+        <div class="color-opt" style="background:#1E293B" data-cor="#1E293B" onclick="setCorCartao('#1E293B')" title="Preto"></div>
+        <div class="color-opt" style="background:#B45309" data-cor="#B45309" onclick="setCorCartao('#B45309')" title="Marrom"></div>
+      </div>
+      <input id="cc-cor" type="hidden" value="#8B5CF6"/>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+        <div class="color-preview" id="cc-cor-preview" style="background:#8B5CF6"></div>
+        <span style="font-size:12px;color:var(--mu)" id="cc-cor-label">Roxo selecionado</span>
+      </div>
     </div>
     <div class="gf">
       <div class="fld"><label>Limite (R$)</label><input id="cc-limite" type="number" placeholder="0,00" min="0" step="0.01"/></div>
@@ -1086,9 +1110,9 @@ function renderCartoes(){
     const gastoMesCard=cc.gastos.filter(function(g){const d=td(g.data);return d.getMonth()===mes&&d.getFullYear()===ano;}).reduce(function(s,g){return s+g.valor;},0);
     const pct=cc.limite>0?Math.min(100,(gastoMesCard/cc.limite*100)):0;
     const cor=corProgresso(pct);
-    // Disponível real (total histórico)
-    const gastoTotal=totalGastoCC(cc);
-    const disp=cc.limite-gastoTotal;
+    // Disponível real = limite - gastos de faturas em aberto (faturas pagas liberam limite)
+    const dispReal=cc.limite-gastoEmAberto(cc);
+    const disp=dispReal;
     const dispCor=disp>=0?'var(--v)':'var(--r)';
     const gastosMes=cc.gastos.filter(function(g){const d=td(g.data);return d.getMonth()===mes&&d.getFullYear()===ano;}).sort(function(a,b){return td(b.data)-td(a.data);});
     html+='<div class="cc-card"><div class="cc-card-stripe" style="background:'+cc.cor+'"></div><div class="cc-card-header"><div class="cc-card-icon" style="background:'+cc.cor+'22">'+cc.bandeira+'</div><div class="cc-card-info"><div class="cc-card-nome">'+cc.nome+'</div><div class="cc-card-limite">Limite: '+brl(cc.limite)+' · Disponível: <span style="color:'+dispCor+'">'+brl(disp)+'</span></div></div><div class="cc-card-actions"><button class="cc-card-btn" onclick="abrirModalCartao(\''+cc.id+'\')" title="Editar">✏️</button><button class="cc-card-btn" style="color:#ccc" onclick="removerCartao(\''+cc.id+'\')">🗑️</button></div></div>';
@@ -1125,7 +1149,13 @@ function abrirModalCartao(id){
   document.getElementById('cc-nome').value=cc?.nome||'';
   document.getElementById('cc-band').value=cc?.bandeira||'💳';
   document.getElementById('cc-limite').value=cc?.limite||'';
-  document.getElementById('cc-cor').value=cc?.cor||'#6366F1';
+  const corAtual=cc?.cor||'#8B5CF6';
+  document.getElementById('cc-cor').value=corAtual;
+  document.getElementById('cc-cor-preview').style.background=corAtual;
+  document.getElementById('cc-cor-label').textContent=(NOMES_CORES[corAtual]||'Cor')+' selecionado';
+  document.querySelectorAll('#cc-cor-picker .color-opt').forEach(function(el){
+    el.classList.toggle('selected', el.dataset.cor===corAtual);
+  });
   document.getElementById('cc-venc').value=cc?.diaVenc||10;
   document.getElementById('cc-modal-err').style.display='none';
   document.getElementById('ovl-cc').classList.add('open');
@@ -1639,6 +1669,18 @@ async function importarDoNotion(){
 function setEmoji(inputId, emoji){
   const el = document.getElementById(inputId);
   if(el){ el.value = emoji; el.focus(); }
+}
+
+const NOMES_CORES={'#8B5CF6':'Roxo','#F97316':'Laranja','#EF4444':'Vermelho','#3B82F6':'Azul','#F59E0B':'Amarelo','#16A34A':'Verde','#EC4899':'Rosa','#6366F1':'Índigo','#14B8A6':'Turquesa','#64748B':'Cinza','#1E293B':'Preto','#B45309':'Marrom'};
+
+function setCorCartao(cor){
+  document.getElementById('cc-cor').value=cor;
+  document.getElementById('cc-cor-preview').style.background=cor;
+  document.getElementById('cc-cor-label').textContent=(NOMES_CORES[cor]||'Cor')+' selecionado';
+  // Marcar cor selecionada
+  document.querySelectorAll('#cc-cor-picker .color-opt').forEach(function(el){
+    el.classList.toggle('selected', el.dataset.cor===cor);
+  });
 }
 
 // ── START ──────────────────────────────────────────────────
