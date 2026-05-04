@@ -868,7 +868,14 @@ function renderResumo(){
 
 function renderRelatorio(){
   const dm=doMes(mes,ano);
-  const topGastos=catG.map(cat=>({cat,v:dm.filter(t=>t.tipo==='Gasto'&&t.categoria===cat).reduce((s,t)=>s+t.valor,0)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,6);
+  // Gastos do cartão do mês
+  const gastCartaoMesRel=cartoes.reduce((s,cc)=>{
+    return s+cc.gastos.filter(g=>{const d=td(g.data);return d.getMonth()===mes&&d.getFullYear()===ano;}).reduce((ss,g)=>ss+g.valor,0);
+  },0);
+  // Categorias de gasto + cartões
+  let topGastos=catG.map(cat=>({cat,v:dm.filter(t=>t.tipo==='Gasto'&&t.categoria===cat).reduce((s,t)=>s+t.valor,0)})).filter(x=>x.v>0);
+  if(gastCartaoMesRel>0) topGastos.push({cat:'💳 Cartões',v:gastCartaoMesRel,isCartao:true});
+  topGastos=topGastos.sort((a,b)=>b.v-a.v).slice(0,6);
   const maxGasto=topGastos[0]?.v||1;
   const topTrans=[...dm].filter(t=>t.tipo!=='Guardado').sort((a,b)=>b.valor-a.valor).slice(0,5);
   const el=document.getElementById('rel-content');
@@ -877,7 +884,10 @@ function renderRelatorio(){
   if(topGastos.length){
     html+='<div class="dash-sec"><div class="dash-sec-title">📊 Maiores gastos — '+MESES[mes]+'</div>';
     topGastos.forEach(x=>{
-      html+='<div class="cat-bar-item"><span class="cat-bar-emoji">'+gi(x.cat,'Gasto')+'</span><div class="cat-bar-body"><div class="cat-bar-top"><span class="cat-bar-nome">'+x.cat+'</span><span class="cat-bar-val">'+brl(x.v)+'</span></div><div class="cat-bar-track"><div class="cat-bar-fill" style="width:'+(x.v/maxGasto*100).toFixed(0)+'%"></div></div></div></div>';
+      // Cartões: emoji já está no nome, não usar gi()
+      const icon=x.isCartao?'💳':(x.cat.charCodeAt(0)>127?x.cat.codePointAt(0)?String.fromCodePoint(x.cat.codePointAt(0)):'💸':gi(x.cat,'Gasto'));
+      const nome=x.isCartao?'Cartões de crédito':x.cat;
+      html+='<div class="cat-bar-item"><span class="cat-bar-emoji">'+icon+'</span><div class="cat-bar-body"><div class="cat-bar-top"><span class="cat-bar-nome">'+nome+'</span><span class="cat-bar-val">'+brl(x.v)+'</span></div><div class="cat-bar-track"><div class="cat-bar-fill" style="width:'+(x.v/maxGasto*100).toFixed(0)+'%"></div></div></div></div>';
     });
     html+='</div>';
   }
@@ -1027,23 +1037,27 @@ function renderCartoes(){
   const totalLimite=cartoes.reduce((s,cc)=>s+cc.limite,0);
   const totalGasto=cartoes.reduce((s,cc)=>s+totalGastoCC(cc),0);
   const totalDisp=totalLimite-totalGasto;
-  // Calcular total apenas do mês selecionado
+  // Gastos do mês selecionado
   const totalGastoMes=cartoes.reduce((s,cc)=>{
     return s+cc.gastos.filter(g=>{const d=td(g.data);return d.getMonth()===mes&&d.getFullYear()===ano;}).reduce((ss,g)=>ss+g.valor,0);
   },0);
-  const totalDisp2=totalLimite-totalGastoMes;
-  let hero='<div class="cc-hero"><div class="cc-hero-lbl">Gastos em '+MESES[mes]+'</div><div class="cc-hero-val">'+brl(totalGastoMes)+'</div><div class="cc-hero-sub">de '+brl(totalLimite)+' em limites</div><div class="cc-hero-pills"><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Limite total</div><div class="cc-hero-pill-val">'+brl(totalLimite)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Disponível</div><div class="cc-hero-pill-val" style="color:'+(totalDisp2>=0?'#86EFAC':'#FCA5A5')+'">'+brl(totalDisp2)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Cartões</div><div class="cc-hero-pill-val">'+cartoes.length+'</div></div></div></div>';
+  // Disponível real = soma dos disponíveis de cada cartão (limite - todos os gastos)
+  const totalDispReal=cartoes.reduce((s,cc)=>s+(cc.limite-totalGastoCC(cc)),0);
+  let hero='<div class="cc-hero"><div class="cc-hero-lbl">Gastos em '+MESES[mes]+'</div><div class="cc-hero-val">'+brl(totalGastoMes)+'</div><div class="cc-hero-sub">de '+brl(totalLimite)+' em limites</div><div class="cc-hero-pills"><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Limite total</div><div class="cc-hero-pill-val">'+brl(totalLimite)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Disponível real</div><div class="cc-hero-pill-val" style="color:'+(totalDispReal>=0?'#86EFAC':'#FCA5A5')+'">'+brl(totalDispReal)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Cartões</div><div class="cc-hero-pill-val">'+cartoes.length+'</div></div></div></div>';
   document.getElementById('cc-hero-block').innerHTML=hero;
   let html='';
   cartoes.forEach(function(cc){
-    const gasto=totalGastoCC(cc);
-    const pct=cc.limite>0?Math.min(100,(gasto/cc.limite*100)):0;
+    // Gasto do mês para barra de progresso
+    const gastoMesCard=cc.gastos.filter(function(g){const d=td(g.data);return d.getMonth()===mes&&d.getFullYear()===ano;}).reduce(function(s,g){return s+g.valor;},0);
+    const pct=cc.limite>0?Math.min(100,(gastoMesCard/cc.limite*100)):0;
     const cor=corProgresso(pct);
-    const disp=cc.limite-gasto;
+    // Disponível real (total histórico)
+    const gastoTotal=totalGastoCC(cc);
+    const disp=cc.limite-gastoTotal;
     const dispCor=disp>=0?'var(--v)':'var(--r)';
     const gastosMes=cc.gastos.filter(function(g){const d=td(g.data);return d.getMonth()===mes&&d.getFullYear()===ano;}).sort(function(a,b){return td(b.data)-td(a.data);});
     html+='<div class="cc-card"><div class="cc-card-stripe" style="background:'+cc.cor+'"></div><div class="cc-card-header"><div class="cc-card-icon" style="background:'+cc.cor+'22">'+cc.bandeira+'</div><div class="cc-card-info"><div class="cc-card-nome">'+cc.nome+'</div><div class="cc-card-limite">Limite: '+brl(cc.limite)+' · Disponível: <span style="color:'+dispCor+'">'+brl(disp)+'</span></div></div><div class="cc-card-actions"><button class="cc-card-btn" onclick="abrirModalCartao(\''+cc.id+'\')" title="Editar">✏️</button><button class="cc-card-btn" style="color:#ccc" onclick="removerCartao(\''+cc.id+'\')">🗑️</button></div></div>';
-    html+='<div class="cc-progress-wrap"><div class="cc-progress-top"><span class="cc-progress-gasto" style="color:'+cor+'">'+brl(gasto)+'</span><span class="cc-progress-pct" style="background:'+cor+'22;color:'+cor+'">'+pct.toFixed(0)+'%</span></div><div class="cc-progress-track"><div class="cc-progress-fill" style="width:'+pct+'%;background:'+cor+'"></div></div><div class="cc-progress-labels"><span class="cc-progress-lbl">R$ 0</span><span class="cc-progress-lbl">Limite: '+brl(cc.limite)+'</span></div></div>';
+    html+='<div class="cc-progress-wrap"><div class="cc-progress-top"><span class="cc-progress-gasto" style="color:'+cor+'">'+brl(gastoMesCard)+'</span><span class="cc-progress-pct" style="background:'+cor+'22;color:'+cor+'">'+pct.toFixed(0)+'%</span></div><div class="cc-progress-track"><div class="cc-progress-fill" style="width:'+pct+'%;background:'+cor+'"></div></div><div class="cc-progress-labels"><span class="cc-progress-lbl">R$ 0</span><span class="cc-progress-lbl">Limite: '+brl(cc.limite)+'</span></div></div>';
     if(gastosMes.length){
       html+='<div class="cc-gastos-lista"><div style="font-size:11px;color:var(--lb);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Gastos em '+MESES[mes]+'</div>';
       gastosMes.forEach(function(g){
