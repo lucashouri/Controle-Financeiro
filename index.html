@@ -973,14 +973,13 @@ function renderTransacoes(){
 
 // ── RENDER CATEGORIAS ─────────────────────────────────────
 function renderCats(){
-  const mk=(arr,tipo)=>arr.map((c,i)=>{
-    // Se o nome começa com char não-ASCII (emoji), não adicionar ícone
-    const icon = (c.charCodeAt(0) > 127) ? '' : gi(c,tipo)+' ';
-    return '<div class="catitem"><span style="font-size:13px;font-weight:500">'+icon+c+'</span><button class="catdel" onclick="rmCat(\''+tipo+'\','+i+')">×</button></div>';
+  const mk=(arr,tipo,tipoKey)=>arr.map((cat,i)=>{
+    const icon=(cat.charCodeAt(0)>127)?'':gi(cat,tipo)+' ';
+    return '<div class="catitem"><span style="font-size:13px;font-weight:500">'+icon+cat+'</span><button class="catdel" onclick="rmCat(\''+tipoKey+'\','+i+')">×</button></div>';
   }).join('')||'<p style="color:#bbb;font-size:13px;padding:4px 0">Nenhuma categoria.</p>';
-  document.getElementById('lcg').innerHTML=mk(catG,'Gasto');
-  document.getElementById('lcr').innerHTML=mk(catR,'Receita');
-  document.getElementById('lcgd').innerHTML=mk(catGD,'Guardado');
+  document.getElementById('lcg').innerHTML=mk(catG,'Gasto','g');
+  document.getElementById('lcr').innerHTML=mk(catR,'Receita','r');
+  document.getElementById('lcgd').innerHTML=mk(catGD,'Guardado','gd');
 }
 function addCat(tipo){
   const ids={g:'ncg',r:'ncr',gd:'ncgd'};
