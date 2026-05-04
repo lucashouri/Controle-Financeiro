@@ -823,10 +823,20 @@ function renderResumo(){
   const dm=doMes(mes,ano),da=doAno(ano);
   const mesAnt=mes===0?11:mes-1,anoAnt=mes===0?ano-1:ano;
   const dmAnt=doMes(mesAnt,anoAnt);
-  const recM=soma(dm,'Receita'),gastM=soma(dm,'Gasto');
+  const recM=soma(dm,'Receita'),gastMTrans=soma(dm,'Gasto');
   const recAnt=soma(dmAnt,'Receita'),gastAnt=soma(dmAnt,'Gasto');
-  const recA=soma(da,'Receita'),gastA=soma(da,'Gasto');
+  const recA=soma(da,'Receita'),gastATrans=soma(da,'Gasto');
   const guardTotal=soma(trans,'Guardado');
+  // Somar gastos dos cartões do mês
+  const gastCartaoMes=cartoes.reduce((s,cc)=>{
+    return s+cc.gastos.filter(g=>{const d=td(g.data);return d.getMonth()===mes&&d.getFullYear()===ano;}).reduce((ss,g)=>ss+g.valor,0);
+  },0);
+  // Somar gastos dos cartões do ano
+  const gastCartaoAno=cartoes.reduce((s,cc)=>{
+    return s+cc.gastos.filter(g=>td(g.data).getFullYear()===ano).reduce((ss,g)=>ss+g.valor,0);
+  },0);
+  const gastM=gastMTrans+gastCartaoMes;
+  const gastA=gastATrans+gastCartaoAno;
   const saldoM=recM-gastM;
   const h=new Date().getHours();
   const sauda=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
@@ -846,10 +856,12 @@ function renderResumo(){
   if(gastAnt)hero+='<div class="dash-pill-delta" style="color:'+corD(gastM,gastAnt,true)+'">'+fmtD(gastM,gastAnt)+'</div>';
   hero+='</div></div></div>';
   document.getElementById('dash-hero-block').innerHTML=hero;
+  const totalCaixinhasResumo=caixinhas.reduce((s,cx)=>s+(cx.saldo||0),0);
+  const totalInvestimentos=guardTotal+totalCaixinhasResumo;
   document.getElementById('la').textContent='Ano '+ano;
   document.getElementById('ra').textContent=brl(recA);
   document.getElementById('ga').textContent=brl(gastA);
-  document.getElementById('gda').textContent=brl(guardTotal);
+  document.getElementById('gda').textContent=brl(totalInvestimentos);
   document.getElementById('rempty').style.display=dm.length?'none':'';
   renderRelatorio();
 }
@@ -1015,7 +1027,12 @@ function renderCartoes(){
   const totalLimite=cartoes.reduce((s,cc)=>s+cc.limite,0);
   const totalGasto=cartoes.reduce((s,cc)=>s+totalGastoCC(cc),0);
   const totalDisp=totalLimite-totalGasto;
-  let hero='<div class="cc-hero"><div class="cc-hero-lbl">Total gasto nos cartões</div><div class="cc-hero-val">'+brl(totalGasto)+'</div><div class="cc-hero-sub">de '+brl(totalLimite)+' em limites</div><div class="cc-hero-pills"><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Limite total</div><div class="cc-hero-pill-val">'+brl(totalLimite)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Disponível</div><div class="cc-hero-pill-val" style="color:'+(totalDisp>=0?'#86EFAC':'#FCA5A5')+'">'+brl(totalDisp)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Cartões</div><div class="cc-hero-pill-val">'+cartoes.length+'</div></div></div></div>';
+  // Calcular total apenas do mês selecionado
+  const totalGastoMes=cartoes.reduce((s,cc)=>{
+    return s+cc.gastos.filter(g=>{const d=td(g.data);return d.getMonth()===mes&&d.getFullYear()===ano;}).reduce((ss,g)=>ss+g.valor,0);
+  },0);
+  const totalDisp2=totalLimite-totalGastoMes;
+  let hero='<div class="cc-hero"><div class="cc-hero-lbl">Gastos em '+MESES[mes]+'</div><div class="cc-hero-val">'+brl(totalGastoMes)+'</div><div class="cc-hero-sub">de '+brl(totalLimite)+' em limites</div><div class="cc-hero-pills"><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Limite total</div><div class="cc-hero-pill-val">'+brl(totalLimite)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Disponível</div><div class="cc-hero-pill-val" style="color:'+(totalDisp2>=0?'#86EFAC':'#FCA5A5')+'">'+brl(totalDisp2)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Cartões</div><div class="cc-hero-pill-val">'+cartoes.length+'</div></div></div></div>';
   document.getElementById('cc-hero-block').innerHTML=hero;
   let html='';
   cartoes.forEach(function(cc){
@@ -1220,7 +1237,10 @@ function popularCatRec(){
   const tipo=document.getElementById('rt')?.value||'Gasto';
   const cats=tipo==='Receita'?catR:tipo==='Guardado'?catGD:catG;
   const sel=document.getElementById('rc');
-  if(sel)sel.innerHTML=cats.map(c=>'<option value="'+c+'">'+gi(c,tipo)+' '+c+'</option>').join('');
+  if(sel)sel.innerHTML=cats.map(c=>{
+    const icon=(c.charCodeAt(0)>127)?'':gi(c,tipo)+' ';
+    return '<option value="'+c+'">'+icon+c+'</option>';
+  }).join('');
 }
 
 function renderRecorrentes(){
@@ -1303,7 +1323,10 @@ function setTipo(t){
   document.getElementById('badd').style.background=corMap[t]||'var(--v)';
   document.getElementById('badd').textContent='Adicionar '+t;
   const cats=t==='Receita'?catR:t==='Guardado'?catGD:catG;
-  document.getElementById('fc').innerHTML=cats.map(c=>'<option value="'+c+'">'+gi(c,t)+' '+c+'</option>').join('');
+  document.getElementById('fc').innerHTML=cats.map(c=>{
+    const icon=(c.charCodeAt(0)>127)?'':gi(c,t)+' ';
+    return '<option value="'+c+'">'+icon+c+'</option>';
+  }).join('');
 }
 
 async function salvar(){
@@ -1351,7 +1374,10 @@ function setTipoEdit(t){
   document.getElementById('ebtr').className='ttb'+(t==='Receita'?' ar':'');
   document.getElementById('ebtgd').className='ttb'+(t==='Guardado'?' agd':'');
   const cats=t==='Receita'?catR:t==='Guardado'?catGD:catG;
-  document.getElementById('efc').innerHTML=cats.map(c=>'<option value="'+c+'">'+gi(c,t)+' '+c+'</option>').join('');
+  document.getElementById('efc').innerHTML=cats.map(c=>{
+    const icon=(c.charCodeAt(0)>127)?'':gi(c,t)+' ';
+    return '<option value="'+c+'">'+icon+c+'</option>';
+  }).join('');
 }
 
 async function salvarEdicao(){
