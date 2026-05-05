@@ -1,4 +1,46 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="100" fill="#16A34A"/>
-  <text y="380" x="60" font-size="380" font-family="system-ui,sans-serif" fill="white" font-weight="800">₢</text>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+
+  <defs>
+    <linearGradient id="barGradDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3BE374"></stop>
+      <stop offset="100%" stop-color="#0B7A34"></stop>
+    </linearGradient>
+
+    <radialGradient id="coinGradDark" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#FFE89A"></stop>
+      <stop offset="60%" stop-color="#FFC93A"></stop>
+      <stop offset="100%" stop-color="#C98A00"></stop>
+    </radialGradient>
+
+    <linearGradient id="arrowGradDark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#42E87B"></stop>
+      <stop offset="100%" stop-color="#0B7A34"></stop>
+    </linearGradient>
+
+    <filter id="glow">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#2BE070" flood-opacity="0.4"></feDropShadow>
+    </filter>
+  </defs>
+
+  <!-- Fundo -->
+  <rect width="512" height="512" rx="80" fill="#0B1F2A"></rect>
+
+  <!-- Moeda -->
+  <circle cx="150" cy="160" r="65" fill="url(#coinGradDark)"></circle>
+  <circle cx="150" cy="160" r="52" fill="none" stroke="#FFF1A8" stroke-width="4" opacity="0.5"></circle>
+  <circle cx="150" cy="160" r="65" fill="none" stroke="#8A5F00" stroke-width="3" opacity="0.6"></circle>
+  <text x="150" y="178" font-size="54" text-anchor="middle" fill="#5A4300" font-family="Arial" font-weight="bold">$</text>
+
+  <!-- Barras -->
+  <rect x="120" y="300" width="50" height="100" rx="12" fill="url(#barGradDark)" filter="url(#glow)"></rect>
+  <rect x="190" y="260" width="50" height="140" rx="12" fill="url(#barGradDark)" filter="url(#glow)"></rect>
+  <rect x="260" y="220" width="50" height="180" rx="12" fill="url(#barGradDark)" filter="url(#glow)"></rect>
+  <rect x="330" y="180" width="50" height="220" rx="12" fill="url(#barGradDark)" filter="url(#glow)"></rect>
+
+  <!-- Linha -->
+  <path d="M90 330 Q250 200 380 140" stroke="url(#arrowGradDark)" stroke-width="14" fill="none" stroke-linecap="round" filter="url(#glow)"></path>
+
+  <!-- Ponta ajustada -->
+  <polygon points="380,140 345,140 365,175" fill="#42E87B"></polygon>
+
 </svg>
