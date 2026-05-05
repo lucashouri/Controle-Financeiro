@@ -281,7 +281,9 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .emoji-picker{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:10px;background:#F8F6F2;border-radius:10px}
 .emoji-opt{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .emoji-opt:hover{background:var(--azl);border-color:var(--az)}
-@media(max-width:480px){.g3{grid-template-columns:1fr 1fr}.g3 .card:last-child{grid-column:span 2}.wrap{padding:12px 13px 100px}.dash-saldo-val{font-size:26px}.pat-hero-val{font-size:26px}}
+.cfg-btn{padding:7px 16px;border:1px solid #64748B;background:#475569;color:#F1F5F9;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.cfg-btn:hover{background:#64748B}
+@media(max-width:480px){.g3{grid-template-columns:1fr 1fr}.g3 .card:last-child{grid-column:span 2}.wrap{padding:12px 13px 100px}.dash-saldo-val{font-size:26px}.pat-hero-val{font-size:26px}.ht{display:none}.hs{max-width:none}.logo{width:34px;height:34px;font-size:18px}.nl{min-width:72px;font-size:11px}}
 </style>
 </head>
 <body>
@@ -453,14 +455,14 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
           <div style="font-size:13px;font-weight:600">Tema escuro</div>
           <div style="font-size:12px;color:var(--mu)">Muda a aparência do app</div>
         </div>
-        <button onclick="toggleTema()" style="padding:7px 16px;border:1px solid var(--border);background:var(--bg);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">🌙 Alternar</button>
+        <button onclick="toggleTema()" class="cfg-btn">🌙 Alternar</button>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
         <div>
           <div style="font-size:13px;font-weight:600">🔔 Alertas de vencimento</div>
           <div style="font-size:12px;color:var(--mu)">Aviso quando fatura está próxima do vencimento</div>
         </div>
-        <button onclick="pedirPermissaoNotificacao()" style="padding:7px 16px;border:1px solid var(--border);background:var(--bg);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Ativar</button>
+        <button onclick="pedirPermissaoNotificacao()" class="cfg-btn">Ativar</button>
       </div>
     </div>
     <div class="stcard">
