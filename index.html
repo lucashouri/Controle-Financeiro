@@ -2015,18 +2015,25 @@ async function pedirPermissaoNotificacao(){
 }
 
 // ── BOTÃO VOLTAR ANDROID ──────────────────────────────────
-history.pushState({cf:true}, '');
+// Manter sempre 2 estados no histórico para interceptar Voltar
+function pushEstado(){ history.pushState({cf:true}, ''); }
+pushEstado();
 
-window.addEventListener('popstate', function(){
+window.addEventListener('popstate', function(e){
   if(buscaAtual){
+    // Voltar cancela a busca
     limparBusca();
-    history.pushState({cf:true}, '');
-  } else if(document.querySelector('.exit-modal.open')){
+    pushEstado();
+  } else if(document.getElementById('exit-modal').classList.contains('open')){
+    // Voltar fecha o modal
     fecharExitModal();
+    pushEstado();
   } else {
-    // Mostrar modal de saída
-    document.getElementById('exit-modal').classList.add('open');
-    history.pushState({cf:true}, '');
+    // Mostrar modal de saída — reempurrar estado para não sair ainda
+    pushEstado();
+    setTimeout(function(){
+      document.getElementById('exit-modal').classList.add('open');
+    }, 10);
   }
 });
 
@@ -2036,12 +2043,12 @@ function fecharExitModal(){
 
 function confirmarSaida(){
   fecharExitModal();
-  // Ir para a URL de saída (fecha o PWA)
-  window.location.href = 'about:blank';
+  // Remover os estados que empurramos e sair
+  history.go(-2);
 }
 
 function onBuscaAtivada(){
-  history.pushState({cf:true, busca:true}, '');
+  pushEstado();
 }
 
 // ── SWIPE PARA TROCAR ABAS ────────────────────────────────
