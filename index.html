@@ -2005,20 +2005,32 @@ async function pedirPermissaoNotificacao(){
   }
 }
 
-// ── BOTÃO VOLTAR ANDROID — cancelar busca ─────────────────
+// ── BOTÃO VOLTAR ANDROID ──────────────────────────────────
+// Empurrar estado inicial para capturar o botão voltar
+history.pushState({cf:true}, '');
+
 window.addEventListener('popstate', function(){
-  const input = document.getElementById('search-input');
-  if(buscaAtual && input){
-    // Voltar cancela a busca
+  if(buscaAtual){
+    // Se busca ativa: cancela a busca
     limparBusca();
-    // Empurrar novo estado para não sair do app
-    history.pushState({busca:false}, '');
+    // Reempurra estado para continuar capturando o próximo Voltar
+    history.pushState({cf:true}, '');
+  } else {
+    // Se não há busca: confirmar saída do app
+    const sair = confirm('Deseja fechar o Controle Financeiro?');
+    if(sair){
+      // Voltar de verdade — permite sair
+      history.back();
+    } else {
+      // Reempurra estado para continuar no app
+      history.pushState({cf:true}, '');
+    }
   }
 });
 
-// Empurrar estado inicial quando busca é ativada
+// Empurrar estado quando busca é ativada (para capturar Voltar durante busca)
 function onBuscaAtivada(){
-  if(!buscaAtual) history.pushState({busca:true}, '');
+  history.pushState({cf:true, busca:true}, '');
 }
 
 // ── SWIPE PARA TROCAR ABAS ────────────────────────────────
