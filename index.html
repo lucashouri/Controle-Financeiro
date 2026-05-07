@@ -2015,41 +2015,27 @@ async function pedirPermissaoNotificacao(){
 }
 
 // ── BOTÃO VOLTAR ANDROID ──────────────────────────────────
-// Manter sempre 2 estados no histórico para interceptar Voltar
 function pushEstado(){ history.pushState({cf:true}, ''); }
 pushEstado();
 
-window.addEventListener('popstate', function(e){
+window.addEventListener('popstate', function(){
   if(buscaAtual){
     // Voltar cancela a busca
     limparBusca();
     pushEstado();
-  } else if(document.getElementById('exit-modal').classList.contains('open')){
-    // Voltar fecha o modal
-    fecharExitModal();
-    pushEstado();
   } else {
-    // Mostrar modal de saída — reempurrar estado para não sair ainda
-    pushEstado();
-    setTimeout(function(){
-      document.getElementById('exit-modal').classList.add('open');
-    }, 10);
+    // Sem busca ativa: deixar o Android fechar naturalmente
+    // (não há forma confiável de fechar PWA via JS no Android)
   }
 });
-
-function fecharExitModal(){
-  document.getElementById('exit-modal').classList.remove('open');
-}
-
-function confirmarSaida(){
-  fecharExitModal();
-  // Remover os estados que empurramos e sair
-  history.go(-2);
-}
 
 function onBuscaAtivada(){
   pushEstado();
 }
+
+// Funções vazias para não quebrar referências do modal
+function fecharExitModal(){}
+function confirmarSaida(){}
 
 // ── SWIPE PARA TROCAR ABAS ────────────────────────────────
 (function(){
@@ -2081,17 +2067,5 @@ function onBuscaAtivada(){
 initTema();
 init().then(function(){ verificarVencimentos(); });
 </script>
-<!-- MODAL SAIR DO APP -->
-<div class="exit-modal" id="exit-modal">
-  <div class="exit-box">
-    <div class="exit-icon">👋</div>
-    <div class="exit-title">Fechar o app?</div>
-    <div class="exit-sub">Deseja fechar o Controle Financeiro?</div>
-    <div class="exit-btns">
-      <button class="exit-btn-cancel" onclick="fecharExitModal()">Ficar</button>
-      <button class="exit-btn-sair" onclick="confirmarSaida()">Fechar</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
