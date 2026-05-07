@@ -53,6 +53,17 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .loading-screen{position:fixed;inset:0;background:rgba(255,255,255,.9);display:none;align-items:center;justify-content:center;z-index:150}
 .spinner{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--v);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.splash-screen{position:fixed;inset:0;background:linear-gradient(135deg,#0A1628 0%,#0D2137 50%,#1E3A5F 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:300;transition:opacity .5s ease}
+.splash-screen.hide{opacity:0;pointer-events:none}
+.splash-logo{width:100px;height:100px;border-radius:24px;object-fit:cover;animation:splashIn .6s cubic-bezier(.34,1.56,.64,1) both}
+.splash-title{color:#fff;font-size:22px;font-weight:800;margin-top:16px;letter-spacing:-.5px;animation:splashIn .6s .15s cubic-bezier(.34,1.56,.64,1) both}
+.splash-sub{color:rgba(255,255,255,.5);font-size:13px;margin-top:6px;animation:splashIn .6s .25s cubic-bezier(.34,1.56,.64,1) both}
+.splash-dots{display:flex;gap:8px;margin-top:32px;animation:splashIn .4s .4s ease both}
+.splash-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);animation:dotPulse 1.2s ease infinite}
+.splash-dot:nth-child(2){animation-delay:.2s}
+.splash-dot:nth-child(3){animation-delay:.4s}
+@keyframes splashIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes dotPulse{0%,80%,100%{transform:scale(1);background:rgba(255,255,255,.3)}40%{transform:scale(1.3);background:#4ADE80}}
 .hdr{background:var(--card);border-bottom:1px solid var(--border);padding:10px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.05);gap:6px}
 
 .brand{display:flex;align-items:center;gap:8px;min-width:0;flex-shrink:1}
@@ -235,6 +246,12 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .fatura-btn{width:100%;padding:9px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px}
 .fatura-btn.pagar{background:var(--v);color:#fff}
 .fatura-btn.estornar{background:#F4F2EE;color:var(--mu);border:1px solid var(--border);font-size:12px;padding:6px}
+.fat-hist-item{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--bg)}
+.fat-hist-item:last-child{border-bottom:none}
+.fat-hist-mes{font-size:13px;font-weight:600}
+.fat-hist-data{font-size:11px;color:var(--mu);margin-top:1px}
+.fat-hist-val{font-size:13px;font-weight:700;color:var(--v)}
+.fat-hist-desfazer{font-size:11px;color:var(--mu);background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer}
 .cc-venc{font-size:11px;color:var(--mu);margin-top:2px}
 .cc-tipo-btn.on-parc{background:var(--az);color:#fff}
 .dash-hero{border-radius:20px;padding:22px 20px 20px;margin-bottom:16px;position:relative;overflow:hidden;background:linear-gradient(135deg,#0F172A 0%,#1E3A5F 50%,#1E40AF 100%)}
@@ -300,6 +317,8 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .day-count{font-size:11px;color:var(--mu);font-weight:500}
 .day-total{font-size:13px;font-weight:700}
 .day-toggle{font-size:12px;color:var(--mu);transition:transform .2s}
+.rec-from-trans{width:100%;padding:9px;border:1.5px dashed var(--v);background:transparent;color:var(--v);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px}
+.rec-from-trans:hover{background:var(--vl)}
 .day-items{display:none}
 .day-items.open{display:block}
 @media(max-width:480px){.g3{grid-template-columns:1fr 1fr}.g3 .card:last-child{grid-column:span 2}.wrap{padding:12px 13px 100px}.dash-saldo-val{font-size:26px}.pat-hero-val{font-size:26px}.ht{display:none}.hs{max-width:none}.logo{width:34px;height:34px;font-size:18px}.nl{min-width:72px;font-size:11px}}
@@ -329,6 +348,18 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
     </div>
   </div>
     <button class="auth-btn" id="auth-btn" onclick="fazerAuth()">Entrar</button>
+  </div>
+</div>
+
+<!-- SPLASH -->
+<div class="splash-screen" id="splash-screen">
+  <img src="/icon-192.png" class="splash-logo" alt="logo"/>
+  <div class="splash-title">Controle Financeiro</div>
+  <div class="splash-sub">Carregando seus dados...</div>
+  <div class="splash-dots">
+    <div class="splash-dot"></div>
+    <div class="splash-dot"></div>
+    <div class="splash-dot"></div>
   </div>
 </div>
 
@@ -597,6 +628,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
     <div class="fld"><label>Categoria</label><select id="efc"></select></div>
     <div class="fld"><label>Observação</label><input id="efo" type="text"/></div>
     <div class="errmsg" id="eferr" style="display:none"></div>
+    <button class="rec-from-trans" onclick="tornarRecorrente()">🔁 Tornar esta transação recorrente</button>
     <div class="brow">
       <button class="bcanc" onclick="event.stopPropagation();fecharModal('ovl-e')">Cancelar</button>
       <button class="badd" id="ebadd" style="background:var(--az)" onclick="salvarEdicao()">💾 Salvar</button>
@@ -857,6 +889,9 @@ function showApp(){
   document.getElementById('fdt').value=today();
   popularCatRec();
   render();
+  // Esconder splash com fade
+  const splash=document.getElementById('splash-screen');
+  if(splash){splash.classList.add('hide');setTimeout(()=>splash.style.display='none',500);}
 }
 function showLoading(v){const el=document.getElementById('loading-screen');el.style.display=v?'flex':'none';}
 
@@ -1314,6 +1349,24 @@ function renderCartoes(){
         html+='<button class="fatura-btn pagar" onclick="pagarFatura(\''+cc.id+'\','+mes+','+ano+','+totalFatura+')">💳 Pagar fatura de '+MESES[mes]+'</button>';
       }
     }
+    // Histórico de faturas pagas deste cartão
+    var fatuHist=faturasPagas.filter(function(f){return f.cartao_id===cc.id;}).sort(function(a,b){
+      if(a.ano!==b.ano)return b.ano-a.ano;return b.mes-a.mes;
+    });
+    if(fatuHist.length>0){
+      html+='<div style="margin-top:12px;border-top:1px solid var(--bg);padding-top:10px">';
+      html+='<div style="font-size:11px;color:var(--lb);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Faturas pagas</div>';
+      fatuHist.forEach(function(f){
+        html+='<div class="fat-hist-item">';
+        html+='<div><div class="fat-hist-mes">'+MESES[f.mes]+' '+f.ano+'</div>';
+        html+='<div class="fat-hist-data">Pago em '+td(f.data_pagamento).toLocaleDateString('pt-BR')+'</div></div>';
+        html+='<div style="display:flex;align-items:center;gap:8px">';
+        html+='<span class="fat-hist-val">'+brl(f.valor_pago)+'</span>';
+        html+='<button class="fat-hist-desfazer" onclick="estornarFatura(\''+cc.id+'\','+f.mes+','+f.ano+')">↩</button>';
+        html+='</div></div>';
+      });
+      html+='</div>';
+    }
     html+='<button class="cc-add-btn" style="margin-top:8px" onclick="abrirModalGasto(\''+cc.id+'\')">+ Adicionar gasto em '+cc.nome+'</button></div>';
   });
   document.getElementById('cc-lista').innerHTML=html;
@@ -1545,6 +1598,29 @@ async function confirmarMovCaixinha(){
   badge('🔄 Salvando...','sync');
   await supa.from('movimentacoes_caixinha').insert({caixinha_id:movCaiId,user_id:authUser.id,descricao:desc,tipo:movCaiTipo,valor:val,saldo_apos:+novoSaldo.toFixed(2),data});
   fecharModal('ovl-cai');await carregarTudo();renderPatrimonio();badge('✅ '+movCaiTipo+' de '+brl(val)+' registrado!','ok');
+}
+
+// ── TORNAR RECORRENTE ─────────────────────────────────────
+async function tornarRecorrente(){
+  const t=trans.find(x=>x.id===editandoId);
+  if(!t)return;
+  // Extrair dia da data da transação
+  const dia=td(t.data).getDate();
+  if(!confirm('Criar recorrente "'+t.desc+'" no dia '+dia+' de cada mês — R$ '+brl(t.valor)+'?'))return;
+  badge('🔄 Criando recorrente...','sync');
+  const {error}=await supa.from('recorrentes').insert({
+    user_id:authUser.id,
+    nome:t.desc,
+    tipo:t.tipo,
+    categoria:t.categoria||'',
+    valor:t.valor,
+    dia_mes:dia,
+    ativo:true
+  });
+  if(error){badge('❌ Erro: '+error.message,'err');return;}
+  fecharModal('ovl-e');
+  await carregarTudo();
+  badge('✅ Recorrente criado! Todo dia '+dia+' do mês.','ok');
 }
 
 // ── RECORRENTES ───────────────────────────────────────────
