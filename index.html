@@ -1114,8 +1114,6 @@ function onBusca(val){
   buscaAtual=val.trim().toLowerCase();
   const clearBtn=document.getElementById('search-clear');
   if(clearBtn)clearBtn.style.display=buscaAtual?'':'none';
-  // Ao buscar, mostrar todos os tipos
-  if(buscaAtual&&filtro==='dia')setFiltro('todos');
   renderTransacoes();
 }
 
@@ -1146,7 +1144,7 @@ function renderTransacoes(){
   lista=lista.sort((a,b)=>td(b.data)-td(a.data));
   document.getElementById('fcount').textContent=lista.length+' item'+(lista.length!==1?'s':'');
 
-  // Mostrar total da busca
+  // Total da busca — sempre mostra quando há busca ativa
   const totalEl=document.getElementById('search-total');
   const totalTxt=document.getElementById('search-total-txt');
   const totalVals=document.getElementById('search-total-vals');
@@ -1155,7 +1153,8 @@ function renderTransacoes(){
     const totGasto=lista.filter(t=>t.tipo==='Gasto').reduce((s,t)=>s+t.valor,0);
     const totInv=lista.filter(t=>t.tipo==='Guardado').reduce((s,t)=>s+t.valor,0);
     const saldo=totRec-totGasto;
-    totalTxt.textContent='Resumo de "'+buscaAtual+'" ('+lista.length+' resultado'+(lista.length>1?'s':'')+')';
+    const modoLabel=filtro==='dia'?' — agrupado por dia':'';
+    totalTxt.textContent='Resumo de "'+buscaAtual+'" ('+lista.length+' resultado'+(lista.length>1?'s':'')+')'+modoLabel;
     var valsHtml='';
     if(totRec>0) valsHtml+='<span class="search-total-val" style="color:var(--v)">+'+brl(totRec)+' receitas</span>';
     if(totGasto>0) valsHtml+='<span class="search-total-val" style="color:var(--r)">-'+brl(totGasto)+' gastos</span>';
