@@ -288,6 +288,10 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .search-input:focus{outline:none;border-color:var(--az);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
 .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none}
 .search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:16px;color:var(--mu);cursor:pointer;display:none}
+.search-total{background:linear-gradient(135deg,var(--azl),var(--vl));border:1px solid var(--border);border-radius:10px;padding:11px 15px;margin-bottom:12px;display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.search-total-txt{font-size:12px;color:var(--mu);font-weight:500}
+.search-total-vals{display:flex;gap:14px;flex-wrap:wrap}
+.search-total-val{font-size:13px;font-weight:700}
 .day-group{margin-bottom:4px}
 .day-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--bg);border-radius:8px;cursor:pointer;user-select:none;margin-bottom:2px}
 .day-header:hover{background:var(--azl)}
@@ -423,6 +427,11 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
       <input class="search-input" id="search-input" type="text" placeholder="Buscar por descrição, categoria ou valor..."
         oninput="onBusca(this.value)" autocomplete="off"/>
       <button class="search-clear" id="search-clear" onclick="limparBusca()">×</button>
+    </div>
+    <!-- TOTAL DA BUSCA -->
+    <div class="search-total" id="search-total">
+      <span class="search-total-txt" id="search-total-txt"></span>
+      <div class="search-total-vals" id="search-total-vals"></div>
     </div>
     <div class="ftrow">
       <span style="font-size:12px;color:var(--mu);font-weight:500">Filtrar:</span>
@@ -1136,8 +1145,30 @@ function renderTransacoes(){
   }
   lista=lista.sort((a,b)=>td(b.data)-td(a.data));
   document.getElementById('fcount').textContent=lista.length+' item'+(lista.length!==1?'s':'');
+
+  // Mostrar total da busca
+  const totalEl=document.getElementById('search-total');
+  const totalTxt=document.getElementById('search-total-txt');
+  const totalVals=document.getElementById('search-total-vals');
+  if(buscaAtual&&lista.length>0){
+    const totRec=lista.filter(t=>t.tipo==='Receita').reduce((s,t)=>s+t.valor,0);
+    const totGasto=lista.filter(t=>t.tipo==='Gasto').reduce((s,t)=>s+t.valor,0);
+    const totInv=lista.filter(t=>t.tipo==='Guardado').reduce((s,t)=>s+t.valor,0);
+    const saldo=totRec-totGasto;
+    totalTxt.textContent='Resumo de "'+buscaAtual+'" ('+lista.length+' resultado'+(lista.length>1?'s':'')+')';
+    var valsHtml='';
+    if(totRec>0) valsHtml+='<span class="search-total-val" style="color:var(--v)">+'+brl(totRec)+' receitas</span>';
+    if(totGasto>0) valsHtml+='<span class="search-total-val" style="color:var(--r)">-'+brl(totGasto)+' gastos</span>';
+    if(totInv>0) valsHtml+='<span class="search-total-val" style="color:var(--az)">+'+brl(totInv)+' invest.</span>';
+    if(totRec>0||totGasto>0) valsHtml+='<span class="search-total-val" style="color:'+(saldo>=0?'var(--v)':'var(--r)')+'">= '+(saldo>=0?'+':'')+brl(saldo)+'</span>';
+    totalVals.innerHTML=valsHtml;
+    totalEl.style.display='flex';
+  }else{
+    totalEl.style.display='none';
+  }
+
   const el=document.getElementById('lista');
-  if(!lista.length){el.innerHTML='<p style="color:var(--mu);text-align:center;padding:2.5rem;font-size:14px">'+(buscaAtual?'Nenhum resultado para \"'+buscaAtual+'\"':'Nenhuma transação encontrada.')+'</p>';return;}
+  if(!lista.length){el.innerHTML='<p style="color:var(--mu);text-align:center;padding:2.5rem;font-size:14px">'+(buscaAtual?'Nenhum resultado para "'+buscaAtual+'"':'Nenhuma transação encontrada.')+'</p>';return;}
   const corTipo={Receita:'var(--v)',Gasto:'var(--r)',Guardado:'var(--az)'};
   const bgTipo={Receita:'var(--vl)',Gasto:'var(--rl)',Guardado:'var(--azl)'};
   const prefTipo={Receita:'+',Gasto:'-',Guardado:'+'};
