@@ -2358,7 +2358,7 @@ function abrirGraficoAnual(tipo){
 let invModalChart = null;
 function abrirGraficoInvestimentos(){
   const isDark = document.documentElement.classList.contains('dark');
-  const legendColor = isDark ? '#FFFFFF' : '#111827';
+  const labelColor = isDark ? '#FFFFFF' : '#111827';
   // Agrupar investimentos por categoria
   const grupos = {};
   trans.filter(function(t){return t.tipo==='Guardado';}).forEach(function(t){
