@@ -444,9 +444,9 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
     <div id="dash-hero-block"></div>
     <div class="slbl" id="la"></div>
     <div class="ano-grid">
-      <div class="ano-card verde"><div class="ano-card-lbl">Receita</div><div class="ano-card-val" id="ra" style="color:var(--v)">—</div></div>
-      <div class="ano-card vermelha"><div class="ano-card-lbl">Gasto</div><div class="ano-card-val" id="ga" style="color:var(--r)">—</div></div>
-      <div class="ano-card azul"><div class="ano-card-lbl">Investimentos</div><div class="ano-card-val" id="gda" style="color:var(--az)">—</div></div>
+      <div class="ano-card verde ano-card-click" onclick="abrirGraficoAnual('Receita')" title="Ver por mês"><div class="ano-card-lbl">Receita ↗</div><div class="ano-card-val" id="ra" style="color:var(--v)">—</div></div>
+      <div class="ano-card vermelha ano-card-click" onclick="abrirGraficoAnual('Gasto')" title="Ver por mês"><div class="ano-card-lbl">Gasto ↗</div><div class="ano-card-val" id="ga" style="color:var(--r)">—</div></div>
+      <div class="ano-card azul ano-card-click" onclick="abrirGraficoAnual('Investimentos')" title="Ver por mês"><div class="ano-card-lbl">Invest. ↗</div><div class="ano-card-val" id="gda" style="color:var(--az)">—</div></div>
     </div>
     <div id="rempty" style="display:none" class="empty"><div class="ei">📊</div><p class="ep">Nenhuma transação neste mês.<br>Toque em <strong style="color:var(--v)">+</strong> para adicionar.</p></div>
     <div id="rel-content" style="margin-top:4px"></div>
@@ -1045,12 +1045,37 @@ function badge(txt,tipo='ok'){
 // ── NAVEGAÇÃO ─────────────────────────────────────────────
 function navMes(d){mes+=d;if(mes>11){mes=0;ano++;}if(mes<0){mes=11;ano--;}render();}
 
-function setTab(t){
+function setTab(t, dir){
+  const ORDEM=['resumo','cartoes','patrimonio','graficos','transacoes','recorrentes','cats'];
+  const prevIdx=ORDEM.indexOf(tab), newIdx=ORDEM.indexOf(t);
+  const direction=dir||(newIdx>prevIdx?'left':'right');
   tab=t;
   document.querySelectorAll('.tb').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
-  ['resumo','cartoes','patrimonio','graficos','transacoes','recorrentes','cats'].forEach(id=>{
-    document.getElementById('tab-'+id).style.display=id===t?'':'none';
+  ORDEM.forEach(id=>{
+    const el=document.getElementById('tab-'+id);
+    if(!el)return;
+    if(id===t){
+      el.style.display='';
+      el.style.opacity='0';
+      el.style.transform=direction==='left'?'translateX(20px)':'translateX(-20px)';
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          el.style.transition='opacity .2s ease,transform .2s ease';
+          el.style.opacity='1';
+          el.style.transform='translateX(0)';
+          setTimeout(function(){el.style.transition='';el.style.transform='';},220);
+        });
+      });
+    }else{
+      el.style.display='none';
+      el.style.opacity='';
+      el.style.transform='';
+      el.style.transition='';
+    }
   });
+  // Scroll aba ativa para centro
+  const activeBtn=document.querySelector('.tb[data-tab="'+t+'"]');
+  if(activeBtn)activeBtn.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
   if(t==='patrimonio')renderPatrimonio();
   else if(t==='graficos')renderGraficos();
   else if(t==='transacoes')renderTransacoes();
