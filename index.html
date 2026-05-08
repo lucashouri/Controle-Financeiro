@@ -765,6 +765,11 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
       <div class="fld"><label>Dono (opcional)</label><input id="ncai-dono" type="text" placeholder="Ex: Lucas, Dayanna"/></div>
     </div>
     <div class="fld"><label>Meta (R$) — opcional</label><input id="ncai-meta" type="number" placeholder="0,00" min="0" step="0.01"/></div>
+    <div class="gf">
+      <div class="fld"><label>Depósito mensal (R$)</label><input id="ncai-meta-mensal" type="number" placeholder="Ex: 500" min="0" step="0.01"/></div>
+      <div class="fld"><label>ou % da receita</label><input id="ncai-meta-pct" type="number" placeholder="Ex: 20" min="0" max="100"/></div>
+    </div>
+    <p style="font-size:11px;color:var(--mu);margin:-4px 0 8px">Se definir %, o ideal será calculado com base na receita do mês.</p>
     <div class="errmsg" id="ncai-err" style="display:none"></div>
     <div class="brow">
       <button class="bcanc" onclick="fecharModal('ovl-nova-cai')">Cancelar</button>
@@ -1108,6 +1113,50 @@ function renderPatrimonio(){
       cards+='<div class="cai-saldo-lbl">Saldo atual</div>';
       cards+='<div class="cai-saldo-val" style="color:'+cor+'">'+brl(cx.saldo)+'</div>';
       if(cx.meta>0)cards+='<div class="cai-meta-bar"><div class="cai-meta-fill" style="width:'+pct+'%;background:'+cor+'"></div></div><div class="cai-meta-txt">Meta: '+brl(cx.meta)+' ('+pct+'%)</div>';
+      // Indicador de meta mensal
+      if(cx.metaMensal>0||cx.metaPct>0){
+        const recMes=soma(doMes(mes,ano),'Receita');
+        const metaIdeal=cx.metaPct>0?(recMes*cx.metaPct/100):cx.metaMensal;
+        const depMes=caiMovs.filter(function(m){
+          return m.caixinhaId===cx.id&&m.tipo==='Depósito'&&
+            (function(){var d=td(m.data);return d.getMonth()===mes&&d.getFullYear()===ano;})();
+        }).reduce(function(s,m){return s+m.valor;},0);
+        const pctM=metaIdeal>0?Math.min(100,(depMes/metaIdeal*100)):0;
+        const corM=pctM>=100?'var(--v)':pctM>=50?'var(--am)':'var(--r)';
+        const badgeM=pctM>=100?'✅':'⚠️';
+        const lblMeta=cx.metaPct>0?(cx.metaPct+'% da receita = '+brl(metaIdeal)):brl(metaIdeal);
+        cards+='<div class="cai-meta-mensal">';
+        cards+='<div class="cai-meta-mensal-top">';
+        cards+='<span class="cai-meta-mensal-lbl">'+MESES[mes]+' — Meta: '+lblMeta+'</span>';
+        cards+='<span class="cai-meta-mensal-val" style="color:'+corM+'">'+badgeM+' '+brl(depMes)+'/'+brl(metaIdeal)+'</span>';
+        cards+='</div>';
+        cards+='<div class="cai-meta-bar-wrap"><div class="cai-meta-bar-fill" style="width:'+pctM.toFixed(0)+'%;background:'+corM+'"></div></div>';
+        cards+='</div>';
+        // Alerta fim do mês
+        const hoje=new Date();
+        const ultimoDia=new Date(ano,mes+1,0).getDate();
+        const diasR=ultimoDia-hoje.getDate();
+        if(hoje.getMonth()===mes&&hoje.getFullYear()===ano&&diasR<=5&&pctM<100){
+          cards+='<div class="cai-alerta">⚠️ Faltam '+diasR+' dia'+(diasR!==1?'s':'')+' e ainda falta '+brl(metaIdeal-depMes)+' para a meta de '+MESES[mes]+'!</div>';
+        }
+      }
+      // Projeção de meta total
+      if(cx.meta>0&&cx.saldo<cx.meta){
+        var movsTodos=caiMovs.filter(function(m){return m.caixinhaId===cx.id&&m.tipo==='Depósito';});
+        if(movsTodos.length>=2){
+          var mesesDep={};
+          movsTodos.forEach(function(m){var d=td(m.data);var k=d.getFullYear()+'-'+d.getMonth();mesesDep[k]=(mesesDep[k]||0)+m.valor;});
+          var vals=Object.values(mesesDep).slice(-3);
+          var media=vals.reduce(function(s,v){return s+v;},0)/vals.length;
+          if(media>0){
+            var falta=cx.meta-cx.saldo;
+            var mesesRest=Math.ceil(falta/media);
+            var dataPrj=new Date();dataPrj.setMonth(dataPrj.getMonth()+mesesRest);
+            var proj=dataPrj.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+            cards+='<div class="cai-projecao">📈 Ritmo atual: '+brl(media)+'/mês. Meta em <strong>'+proj+'</strong></div>';
+          }
+        }
+      }
       cards+='<div class="cai-btns"><button class="cai-btn cai-dep" onclick="abrirMovCaixinha(\''+cx.id+'\',\''+cx.nome+'\',\''+cx.emoji+'\',\'Depósito\','+cx.saldo+')">+ Depositar</button><button class="cai-btn cai-ret" onclick="abrirMovCaixinha(\''+cx.id+'\',\''+cx.nome+'\',\''+cx.emoji+'\',\'Retirada\','+cx.saldo+')">− Retirar</button></div>';
       cards+='<button onclick="excluirCaixinha(\''+cx.id+'\',\''+cx.nome+'\',event)" style="width:100%;margin-top:8px;padding:7px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--mu);font-size:12px;cursor:pointer" onmouseover="this.style.background=\'var(--rl)\';this.style.color=\'var(--r)\';" onmouseout="this.style.background=\'none\';this.style.color=\'var(--mu)\';">🗑️ Excluir caixinha</button></div>';
     });
@@ -1585,11 +1634,13 @@ async function criarCaixinha(){
   const emoji=document.getElementById('ncai-emoji').value.trim()||'🐷';
   const dono=document.getElementById('ncai-dono').value.trim();
   const meta=parseFloat(document.getElementById('ncai-meta').value)||0;
+  const metaMensal=parseFloat(document.getElementById('ncai-meta-mensal').value)||0;
+  const metaPct=parseFloat(document.getElementById('ncai-meta-pct').value)||0;
   const err=document.getElementById('ncai-err');
   if(!nome){err.textContent='Informe o nome da caixinha.';err.style.display='';return;}
   err.style.display='none';
   badge('🔄 Criando caixinha...','sync');
-  const {error}=await supa.from('caixinhas').insert({user_id:authUser.id,nome,emoji,dono,meta,ativa:true});
+  const {error}=await supa.from('caixinhas').insert({user_id:authUser.id,nome,emoji,dono,meta,ativa:true,meta_mensal:metaMensal,meta_percentual:metaPct});
   if(error){badge('❌ Erro: '+error.message,'err');return;}
   fecharModal('ovl-nova-cai');
   await carregarTudo();
