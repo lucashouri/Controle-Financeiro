@@ -2416,5 +2416,22 @@ init().then(function(){ verificarVencimentos(); }).catch(function(err){
   document.getElementById('auth-screen').style.display='flex';
 });
 </script>
+<!-- MODAL GRÁFICO ANUAL -->
+<div class="ano-modal" id="ano-modal" onclick="if(event.target===this)fecharAnoModal()">
+  <div class="ano-box">
+    <div class="ano-box-hdr">
+      <div>
+        <div class="ano-box-titulo" id="ano-modal-titulo">Receita por mês</div>
+        <div style="font-size:12px;color:var(--mu);margin-top:2px" id="ano-modal-sub"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="ano-box-total" id="ano-modal-total"></span>
+        <button onclick="fecharAnoModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--mu);line-height:1">×</button>
+      </div>
+    </div>
+    <canvas id="ano-modal-chart" style="width:100%;max-height:260px"></canvas>
+  </div>
+</div>
+
 </body>
 </html>
