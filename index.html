@@ -2396,11 +2396,12 @@ function abrirGraficoInvestimentos(){
   });
   // Enriquecer labels com emoji usando gi()
   const labelsRaw = Object.keys(grupos);
+  const ABREV = {'Tesouro Direto':'Tesouro','Pagamento de Alunos':'P. Alunos','Pagamento Cooperativa':'Cooperativa'};
   const labels = labelsRaw.map(function(cat){
+    const nome = ABREV[cat] || cat;
     const emoji = gi(cat,'Guardado');
-    // Se o nome já começa com emoji, não duplicar
     if(cat.charCodeAt(0)>127) return cat;
-    return emoji+' '+cat;
+    return emoji+' '+nome;
   });
   const valores = Object.values(grupos);
   const total = valores.reduce(function(s,v){return s+v;},0);
