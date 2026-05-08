@@ -432,7 +432,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
   <button class="tb on" data-tab="resumo" onclick="setTab('resumo')">📊 Resumo</button>
   <button class="tb" data-tab="cartoes" onclick="setTab('cartoes')">💳 Cartões</button>
   <button class="tb" data-tab="patrimonio" onclick="setTab('patrimonio')">🏦 Patrimônio</button>
-  <button class="tb" data-tab="graficos" onclick="setTab('graficos')">📈 Gráficos</button>
+  
   <button class="tb" data-tab="transacoes" onclick="setTab('transacoes')">📋 Transações</button>
   <button class="tb" data-tab="recorrentes" onclick="setTab('recorrentes')">🔁 Recorrentes</button>
   <button class="tb" data-tab="cats" onclick="setTab('cats')">⚙️ Categorias</button>
@@ -464,6 +464,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 
   <!-- PATRIMÔNIO -->
   <div id="tab-patrimonio" style="display:none">
+    <div id="pat-hero-block" style="margin-bottom:14px"></div>
     <div id="cai-pat-section">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;margin-bottom:10px">
         <div class="slbl" style="margin:0">🐷 Caixinhas</div>
@@ -473,23 +474,12 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
       <div id="cai-hist-block"></div>
       <div id="cai-empty" style="display:none" class="empty"><div class="ei">🐷</div><p class="ep">Nenhuma caixinha ainda.<br>Clique em <strong style="color:var(--v)">+ Nova caixinha</strong> para criar.</p></div>
     </div>
-    <div id="pat-hero-block"></div>
     <div class="slbl" style="margin-top:8px">📦 Investimentos</div>
     <div class="lcrd" id="pat-lista"></div>
     <div id="pat-empty" style="display:none;margin-top:12px" class="empty"><div class="ei">🏦</div><p class="ep">Nenhum investimento registrado.<br>Toque em + e selecione Investimentos.</p></div>
   </div>
 
-  <!-- GRÁFICOS -->
-  <div id="tab-graficos" style="display:none">
-    <div id="gempty" style="display:none" class="empty"><div class="ei">📈</div><p class="ep">Adicione transações para ver os gráficos.</p></div>
-    <div id="gcontent">
-      <div class="chcrd"><div class="cht">Receita vs Gasto vs Investimentos</div><div class="chs" id="gs1"></div><canvas id="cbar" height="220"></canvas></div>
-      <div class="chcrd" id="cpatcrd"><div class="cht">Patrimônio por Destino</div><div class="chs" id="gs4"></div><canvas id="cpat" height="160"></canvas></div>
-    </div>
-  </div>
-
-  <!-- TRANSAÇÕES -->
-  <div id="tab-transacoes" style="display:none">
+  <!-- GRÁFICOS -div id="tab-transacoes" style="display:none">
     <!-- BUSCA -->
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
@@ -1046,7 +1036,7 @@ function badge(txt,tipo='ok'){
 function navMes(d){mes+=d;if(mes>11){mes=0;ano++;}if(mes<0){mes=11;ano--;}render();}
 
 function setTab(t, dir){
-  const ORDEM=['resumo','cartoes','patrimonio','graficos','transacoes','recorrentes','cats'];
+  const ORDEM=['resumo','cartoes','patrimonio','transacoes','recorrentes','cats'];
   const prevIdx=ORDEM.indexOf(tab), newIdx=ORDEM.indexOf(t);
   const direction=dir||(newIdx>prevIdx?'left':'right');
   tab=t;
@@ -1077,7 +1067,6 @@ function setTab(t, dir){
   const activeBtn=document.querySelector('.tb[data-tab="'+t+'"]');
   if(activeBtn)activeBtn.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
   if(t==='patrimonio')renderPatrimonio();
-  else if(t==='graficos')renderGraficos();
   else if(t==='transacoes')renderTransacoes();
   else if(t==='cats')renderCats();
   else if(t==='cartoes')renderCartoes();
@@ -2052,7 +2041,6 @@ function render(){
   if(tab==='resumo')renderResumo();
   else if(tab==='cartoes')renderCartoes();
   else if(tab==='patrimonio')renderPatrimonio();
-  else if(tab==='graficos')renderGraficos();
   else if(tab==='transacoes')renderTransacoes();
   else if(tab==='recorrentes')renderRecorrentes();
   else if(tab==='cats')renderCats();
@@ -2354,7 +2342,14 @@ function abrirGraficoInvestimentos(){
     const cat = t.categoria||'Outros';
     grupos[cat] = (grupos[cat]||0) + t.valor;
   });
-  const labels = Object.keys(grupos);
+  // Enriquecer labels com emoji usando gi()
+  const labelsRaw = Object.keys(grupos);
+  const labels = labelsRaw.map(function(cat){
+    const emoji = gi(cat,'Guardado');
+    // Se o nome já começa com emoji, não duplicar
+    if(cat.charCodeAt(0)>127) return cat;
+    return emoji+' '+cat;
+  });
   const valores = Object.values(grupos);
   const total = valores.reduce(function(s,v){return s+v;},0);
   const cores = ['#2563EB','#16A34A','#D97706','#DC2626','#7C3AED','#0891B2','#F59E0B','#10B981'];
@@ -2413,7 +2408,7 @@ function fecharAnoModal(){
 
 // ── SWIPE PARA TROCAR ABAS ────────────────────────────────
 (function(){
-  var TABS=['resumo','cartoes','patrimonio','graficos','transacoes','recorrentes','cats'];
+  var TABS=['resumo','cartoes','patrimonio','transacoes','recorrentes','cats'];
   var touchStartX=0, touchStartY=0, touchStartTime=0;
 
   document.addEventListener('touchstart',function(e){
