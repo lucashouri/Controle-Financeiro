@@ -456,7 +456,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
         <div class="slbl" style="margin:0">🐷 Caixinhas</div>
         <button onclick="abrirModalNovaCaixinha()" style="padding:6px 12px;background:var(--v);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">+ Nova caixinha</button>
       </div>
-      <div id="cai-cards" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px"></div>
+      <div id="cai-cards" style="display:flex;flex-direction:column;gap:14px;margin-bottom:14px"></div>
       <div id="cai-hist-block"></div>
       <div id="cai-empty" style="display:none" class="empty"><div class="ei">🐷</div><p class="ep">Nenhuma caixinha ainda.<br>Clique em <strong style="color:var(--v)">+ Nova caixinha</strong> para criar.</p></div>
     </div>
@@ -1160,11 +1160,17 @@ function renderPatrimonio(){
       cards+='<div style="display:flex;align-items:center;gap:6px"><span style="font-size:16px">'+cx.emoji+'</span><span class="cai-nome" style="margin:0">'+cx.nome+'</span></div>';
       if(cx.dono)cards+='<span class="cai-dono" style="color:'+cor+';margin:0;font-size:11px;padding:2px 8px;background:'+cor+'22;border-radius:20px">'+cx.dono+'</span>';
       cards+='</div>';
-      cards+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+      cards+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
       cards+='<div style="font-size:11px;color:var(--lb);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Saldo atual</div>';
-      cards+='<div style="font-size:20px;font-weight:800;color:'+cor+'">'+brl(cx.saldo)+'</div>';
+      cards+='<div style="font-size:24px;font-weight:800;color:'+cor+'">'+brl(cx.saldo)+'</div>';
       cards+='</div>';
-      if(cx.meta>0)cards+='<div class="cai-meta-bar"><div class="cai-meta-fill" style="width:'+pct+'%;background:'+cor+'"></div></div><div class="cai-meta-txt">Meta: '+brl(cx.meta)+' ('+pct+'%)</div>';
+      if(cx.meta>0){
+        cards+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
+        cards+='<span style="font-size:11px;color:var(--mu)">Meta: '+brl(cx.meta)+'</span>';
+        cards+='<span style="font-size:11px;font-weight:700;color:'+cor+'">'+pct+'%</span>';
+        cards+='</div>';
+        cards+='<div class="cai-meta-bar" style="margin-bottom:10px"><div class="cai-meta-fill" style="width:'+pct+'%;background:'+cor+'"></div></div>';
+      }
       // Indicador de meta mensal
       if(cx.metaMensal>0||cx.metaPct>0){
         const recMes=soma(doMes(mes,ano),'Receita');
