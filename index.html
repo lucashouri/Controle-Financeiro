@@ -346,6 +346,22 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .ano-card-click{cursor:pointer;transition:transform .15s,box-shadow .15s}
 .ano-card-click:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.12)}
 .ano-card-click:active{transform:scale(.97)}
+.onboard-ovl{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center;padding:16px}
+.onboard-ovl.open{display:flex}
+.onboard-box{background:var(--card);border-radius:24px;width:100%;max-width:400px;overflow:hidden}
+.onboard-prog{display:flex;gap:6px;padding:16px 20px 0}
+.onboard-prog-dot{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background .3s}
+.onboard-prog-dot.done{background:var(--v)}
+.onboard-prog-dot.active{background:var(--v);opacity:.5}
+.onboard-slide{padding:28px 24px 24px}
+.onboard-icon{font-size:48px;margin-bottom:12px;text-align:center}
+.onboard-titulo{font-size:20px;font-weight:800;color:var(--tx);margin-bottom:8px;text-align:center}
+.onboard-desc{font-size:14px;color:var(--mu);line-height:1.6;text-align:center;margin-bottom:20px}
+.onboard-dica{background:var(--bg);border-radius:10px;padding:12px 14px;margin-bottom:20px}
+.onboard-dica p{font-size:13px;color:var(--tx);margin:4px 0;line-height:1.5}
+.onboard-btns{display:flex;gap:10px}
+.onboard-btn-skip{flex:0;padding:12px 16px;border:1px solid var(--border);background:none;border-radius:12px;font-size:13px;color:var(--mu);cursor:pointer;white-space:nowrap}
+.onboard-btn-next{flex:1;padding:12px;border:none;background:var(--v);border-radius:12px;font-size:14px;font-weight:700;color:#fff;cursor:pointer}
 .exit-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:none;align-items:center;justify-content:center;padding:24px}
 .exit-modal.open{display:flex}
 .exit-box{background:var(--card);border-radius:18px;padding:28px 24px;width:100%;max-width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -971,6 +987,8 @@ function showApp(){
   popularCatRec();
   render();
   esconderSplash();
+  // Iniciar onboarding se for o primeiro acesso
+  setTimeout(iniciarOnboarding, 800);
 }
 function showLoading(v){const el=document.getElementById('loading-screen');el.style.display=v?'flex':'none';}
 
@@ -2180,6 +2198,106 @@ function setCorCartao(cor){
   });
 }
 
+// ── ONBOARDING ────────────────────────────────────────────
+const ONBOARD_STEPS = [
+  {
+    icon: '👋',
+    titulo: 'Bem-vindo ao Controle Financeiro!',
+    desc: 'Em poucos passos você vai entender como o app funciona. Vamos lá?',
+    dica: null,
+    btn: 'Começar'
+  },
+  {
+    icon: '📊',
+    titulo: 'Aba Resumo',
+    desc: 'Aqui você vê o saldo do mês, receitas e gastos. Os 3 cards do ano são clicáveis — toque neles para ver um gráfico mensal.',
+    dica: {items: ['🗓️ Navegue pelos meses com as setas no topo','📈 Clique em Receita, Gasto ou Investimentos para ver o gráfico por mês']},
+    btn: 'Próximo'
+  },
+  {
+    icon: '💳',
+    titulo: 'Cartões de Crédito',
+    desc: 'Cadastre seus cartões, lance gastos e parcele compras. Ao pagar a fatura, o limite é liberado automaticamente.',
+    dica: {items: ['➕ Toque em "+ Novo cartão" para adicionar','💰 Clique em uma fatura paga para ver todos os gastos daquele mês']},
+    btn: 'Próximo'
+  },
+  {
+    icon: '🐷',
+    titulo: 'Patrimônio e Caixinhas',
+    desc: 'Crie caixinhas para guardar dinheiro com metas e rendimento CDI. Acompanhe também seus investimentos.',
+    dica: {items: ['📈 Configure % CDI para ver o rendimento automático','🎯 Defina uma meta mensal de depósito','📦 Clique em Investimentos para ver o gráfico']},
+    btn: 'Próximo'
+  },
+  {
+    icon: '📋',
+    titulo: 'Transações',
+    desc: 'Lance receitas, gastos e investimentos. Use a busca para encontrar qualquer transação e o filtro "Por dia" para ver o total diário.',
+    dica: {items: ['🔍 Busque por nome, categoria ou valor','📅 Agrupe por dia para ver quanto gastou em cada data','🔁 No modal de edição você pode tornar qualquer transação recorrente']},
+    btn: 'Próximo'
+  },
+  {
+    icon: '🚀',
+    titulo: 'Tudo pronto!',
+    desc: 'Agora é com você! Comece adicionando sua primeira receita ou gasto. Qualquer dúvida, explore o app — tudo foi pensado para ser simples.',
+    dica: {items: ['💡 Toque em + para adicionar qualquer transação','⚙️ Em Categorias você personaliza tudo','🌙 Ative o tema escuro nas configurações']},
+    btn: 'Começar a usar!'
+  }
+];
+
+let onboardStep = 0;
+
+function iniciarOnboarding(){
+  if(ls.get('cf_onboard_done','') === '1') return;
+  onboardStep = 0;
+  renderOnboardStep();
+  document.getElementById('onboard-ovl').classList.add('open');
+}
+
+function renderOnboardStep(){
+  const total = ONBOARD_STEPS.length;
+  const s = ONBOARD_STEPS[onboardStep];
+  // Barra de progresso
+  let prog = '';
+  for(let i=0;i<total;i++){
+    const cls = i<onboardStep?'done':i===onboardStep?'active':'';
+    prog += '<div class="onboard-prog-dot '+cls+'"></div>';
+  }
+  document.getElementById('onboard-prog').innerHTML = prog;
+  // Slide
+  let dica = '';
+  if(s.dica){
+    dica = '<div class="onboard-dica">' + s.dica.items.map(function(t){return '<p>'+t+'</p>';}).join('') + '</div>';
+  }
+  const isLast = onboardStep === total-1;
+  document.getElementById('onboard-slide').innerHTML =
+    '<div class="onboard-icon">'+s.icon+'</div>'+
+    '<div class="onboard-titulo">'+s.titulo+'</div>'+
+    '<div class="onboard-desc">'+s.desc+'</div>'+
+    dica+
+    '<div class="onboard-btns">'+
+    (isLast?'':'<button class="onboard-btn-skip" onclick="pularOnboarding()">Pular</button>')+
+    '<button class="onboard-btn-next" onclick="proximoOnboard()">'+s.btn+'</button>'+
+    '</div>';
+}
+
+function proximoOnboard(){
+  if(onboardStep < ONBOARD_STEPS.length-1){
+    onboardStep++;
+    renderOnboardStep();
+  } else {
+    fecharOnboarding();
+  }
+}
+
+function pularOnboarding(){
+  fecharOnboarding();
+}
+
+function fecharOnboarding(){
+  ls.set('cf_onboard_done','1');
+  document.getElementById('onboard-ovl').classList.remove('open');
+}
+
 // ── TEMA ESCURO ───────────────────────────────────────────
 function toggleTema(){
   const dark=document.documentElement.classList.toggle('dark');
@@ -2560,6 +2678,14 @@ init().then(function(){ verificarVencimentos(); }).catch(function(err){
       <span style="font-size:13px;color:var(--mu);font-weight:600">Total da fatura</span>
       <span style="font-size:15px;font-weight:800;color:var(--r)" id="vf-total"></span>
     </div>
+  </div>
+</div>
+
+<!-- ONBOARDING -->
+<div class="onboard-ovl" id="onboard-ovl">
+  <div class="onboard-box">
+    <div class="onboard-prog" id="onboard-prog"></div>
+    <div class="onboard-slide" id="onboard-slide"></div>
   </div>
 </div>
 
