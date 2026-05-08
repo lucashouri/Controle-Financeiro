@@ -260,6 +260,14 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .cai-meta-bar-fill{height:100%;border-radius:3px;transition:width .4s ease}
 .cai-projecao{margin-top:8px;font-size:12px;color:var(--mu);padding:8px 12px;background:var(--azl);border-radius:8px;line-height:1.5}
 .cai-alerta{margin-top:8px;font-size:12px;font-weight:600;color:var(--r);padding:8px 12px;background:var(--rl);border-radius:8px}
+.cdi-box{margin-top:10px;padding:11px 13px;background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(22,163,74,.08));border:1px solid var(--azl);border-radius:10px}
+.cdi-box-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.cdi-lbl{font-size:11px;font-weight:700;color:var(--az);text-transform:uppercase;letter-spacing:.04em}
+.cdi-taxa{font-size:11px;color:var(--mu)}
+.cdi-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+.cdi-row:last-child{border-bottom:none;padding-top:6px;margin-top:2px}
+.cdi-row-lbl{font-size:12px;color:var(--mu)}
+.cdi-row-val{font-size:13px;font-weight:700}
 .cc-venc{font-size:11px;color:var(--mu);margin-top:2px}
 .cc-tipo-btn.on-parc{background:var(--az);color:#fff}
 .dash-hero{border-radius:20px;padding:22px 20px 20px;margin-bottom:16px;position:relative;overflow:hidden;background:linear-gradient(135deg,#0F172A 0%,#1E3A5F 50%,#1E40AF 100%)}
@@ -729,6 +737,37 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
   </div>
 </div>
 
+<!-- MODAL EDITAR CAIXINHA -->
+<div class="ovl" id="ovl-edit-cai" onclick="fecharSe(event,'ovl-edit-cai')">
+  <div class="mdl" style="max-width:400px">
+    <div class="mhdr"><span class="mtit">✏️ Editar Caixinha</span><button class="mcls" onclick="fecharModal('ovl-edit-cai')">×</button></div>
+    <div class="fld"><label>Nome</label><input id="ecai-nome" type="text" placeholder="Nome da caixinha"/></div>
+    <div class="gf">
+      <div class="fld"><label>Emoji</label><input id="ecai-emoji" type="text" maxlength="4"/></div>
+      <div class="fld"><label>Dono</label><input id="ecai-dono" type="text" placeholder="Ex: Lucas"/></div>
+    </div>
+    <div class="fld"><label>Meta total (R$)</label><input id="ecai-meta" type="number" placeholder="0,00" min="0" step="0.01"/></div>
+    <div class="gf">
+      <div class="fld"><label>Depósito mensal (R$)</label><input id="ecai-meta-mensal" type="number" placeholder="Ex: 500" min="0" step="0.01"/></div>
+      <div class="fld"><label>ou % da receita</label><input id="ecai-meta-pct" type="number" placeholder="Ex: 20" min="0" max="100"/></div>
+    </div>
+    <p style="font-size:11px;color:var(--mu);margin:-4px 0 8px">Se definir %, o ideal será calculado com base na receita do mês.</p>
+    <div style="margin-bottom:8px;padding:10px 12px;background:var(--azl);border-radius:9px;border:1px solid var(--az)">
+      <div style="font-size:12px;font-weight:700;color:var(--az);margin-bottom:8px">📈 Rendimento CDI</div>
+      <div class="gf">
+        <div class="fld"><label>% do CDI</label><input id="ecai-pct-cdi" type="number" placeholder="Ex: 100" min="0" max="200"/></div>
+        <div class="fld"><label>Início</label><input id="ecai-inicio-cdi" type="date"/></div>
+      </div>
+      <p style="font-size:11px;color:var(--mu);margin:4px 0 0">100 = 100% CDI, 120 = 120% CDI. Deixe vazio para não aplicar.</p>
+    </div>
+    <div class="errmsg" id="ecai-err" style="display:none"></div>
+    <div class="brow">
+      <button class="bcanc" onclick="fecharModal('ovl-edit-cai')">Cancelar</button>
+      <button class="badd" style="background:var(--v)" onclick="salvarEditCaixinha()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL PAGAR FATURA -->
 <div class="ovl" id="ovl-fatura" onclick="fecharSe(event,'ovl-fatura')">
   <div class="mdl" style="max-width:400px">
@@ -770,6 +809,14 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
       <div class="fld"><label>ou % da receita</label><input id="ncai-meta-pct" type="number" placeholder="Ex: 20" min="0" max="100"/></div>
     </div>
     <p style="font-size:11px;color:var(--mu);margin:-4px 0 8px">Se definir %, o ideal será calculado com base na receita do mês.</p>
+    <div style="margin-bottom:8px;padding:10px 12px;background:var(--azl);border-radius:9px;border:1px solid var(--az)">
+      <div style="font-size:12px;font-weight:700;color:var(--az);margin-bottom:8px">📈 Rendimento CDI</div>
+      <div class="gf">
+        <div class="fld"><label>% do CDI</label><input id="ncai-pct-cdi" type="number" placeholder="Ex: 100" min="0" max="200"/></div>
+        <div class="fld"><label>Início</label><input id="ncai-inicio-cdi" type="date"/></div>
+      </div>
+      <p style="font-size:11px;color:var(--mu);margin:4px 0 0">100 = 100% CDI, 120 = 120% CDI. Deixe vazio para não aplicar.</p>
+    </div>
     <div class="errmsg" id="ncai-err" style="display:none"></div>
     <div class="brow">
       <button class="bcanc" onclick="fecharModal('ovl-nova-cai')">Cancelar</button>
@@ -824,6 +871,7 @@ let movCaiId='',movCaiNome='',movCaiEmoji='',movCaiTipo='',movCaiSaldo=0;
 let recMeses=ls.get('cf_rec_meses',[]);
 let faturasPagas=[];
 let buscaAtual='';
+let taxaCDImensal=0; // Taxa CDI mensal atual em %
 
 // ── UTILS ─────────────────────────────────────────────────
 const brl=v=>Math.abs(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -961,7 +1009,7 @@ async function carregarTudo(){
     caiMovs=(mov.data||[]).map(r=>({id:r.id,caixinhaId:r.caixinha_id,desc:r.descricao,tipo:r.tipo,valor:r.valor,saldoApos:r.saldo_apos,data:r.data}));
     caixinhas=(cai.data||[]).map(r=>{
       const saldo=caiMovs.filter(m=>m.caixinhaId===r.id).reduce((s,m)=>m.tipo==='Depósito'?s+m.valor:s-m.valor,0);
-      return{id:r.id,nome:r.nome,dono:r.dono||'',emoji:r.emoji||'🐷',meta:r.meta||0,ativa:r.ativa,saldo:+saldo.toFixed(2),metaMensal:r.meta_mensal||0,metaPct:r.meta_percentual||0};
+      return{id:r.id,nome:r.nome,dono:r.dono||'',emoji:r.emoji||'🐷',meta:r.meta||0,ativa:r.ativa,saldo:+saldo.toFixed(2),metaMensal:r.meta_mensal||0,metaPct:r.meta_percentual||0,pctCdi:r.percentual_cdi||0,inicioCdi:r.data_inicio_cdi||''};
     });
     recorrentes=(rec.data||[]).map(r=>({nid:r.id,nome:r.nome,tipo:r.tipo,categoria:r.categoria,valor:r.valor,dia:r.dia_mes,ativo:r.ativo}));
   }catch(e){badge('Erro ao carregar: '+e.message,'err');}
@@ -1140,6 +1188,38 @@ function renderPatrimonio(){
           cards+='<div class="cai-alerta">⚠️ Faltam '+diasR+' dia'+(diasR!==1?'s':'')+' e ainda falta '+brl(metaIdeal-depMes)+' para a meta de '+MESES[mes]+'!</div>';
         }
       }
+      // Box de rendimento CDI
+      if(cx.pctCdi>0&&cx.inicioCdi){
+        const taxaEfetiva = taxaCDImensal * cx.pctCdi / 100; // taxa mensal efetiva
+        const inicio = new Date(cx.inicioCdi+'T00:00:00');
+        const hoje2 = new Date();
+        // Calcular meses completos desde início
+        const mesesDecorridos = (hoje2.getFullYear()-inicio.getFullYear())*12 + (hoje2.getMonth()-inicio.getMonth());
+        // Calcular total depositado desde o início do CDI
+        const depositosTotais = caiMovs.filter(function(m){
+          return m.caixinhaId===cx.id&&m.tipo==='Depósito'&&new Date(m.data+'T00:00:00')>=inicio;
+        }).reduce(function(s,m){return s+m.valor;},0);
+        const retiradaTotais = caiMovs.filter(function(m){
+          return m.caixinhaId===cx.id&&m.tipo==='Retirada'&&new Date(m.data+'T00:00:00')>=inicio;
+        }).reduce(function(s,m){return s+m.valor;},0);
+        const saldoBase = depositosTotais - retiradaTotais;
+        // Rendimento estimado com juros compostos
+        const saldoComRendimento = saldoBase * Math.pow(1 + taxaEfetiva/100, Math.max(mesesDecorridos,0));
+        const rendimento = Math.max(0, saldoComRendimento - saldoBase);
+        // Rendimento do mês atual
+        const rendMes = cx.saldo * taxaEfetiva / 100;
+        const dataCDIref = ls.get('cf_cdi_data','');
+        cards+='<div class="cdi-box">';
+        cards+='<div class="cdi-box-top">';
+        cards+='<span class="cdi-lbl">📈 '+cx.pctCdi+'% CDI</span>';
+        cards+='<span class="cdi-taxa">Taxa: '+(taxaEfetiva).toFixed(4)+'%/mês'+(dataCDIref?' · ref '+dataCDIref:'')+'</span>';
+        cards+='</div>';
+        cards+='<div class="cdi-row"><span class="cdi-row-lbl">💰 Depositado</span><span class="cdi-row-val" style="color:var(--tx)">'+brl(saldoBase)+'</span></div>';
+        if(rendimento>0) cards+='<div class="cdi-row"><span class="cdi-row-lbl">📊 Rendimento acumulado</span><span class="cdi-row-val" style="color:var(--v)">+'+brl(rendimento)+'</span></div>';
+        cards+='<div class="cdi-row"><span class="cdi-row-lbl">🗓️ Estimativa deste mês</span><span class="cdi-row-val" style="color:var(--v)">+'+brl(rendMes)+'</span></div>';
+        cards+='<div class="cdi-row" style="border-top:1px solid var(--border);margin-top:4px"><span class="cdi-row-lbl" style="font-weight:700">Total c/ rendimento</span><span class="cdi-row-val" style="color:var(--az)">'+brl(cx.saldo+rendimento)+'</span></div>';
+        cards+='</div>';
+      }
       // Projeção de meta total
       if(cx.meta>0&&cx.saldo<cx.meta){
         var movsTodos=caiMovs.filter(function(m){return m.caixinhaId===cx.id&&m.tipo==='Depósito';});
@@ -1158,6 +1238,7 @@ function renderPatrimonio(){
         }
       }
       cards+='<div class="cai-btns"><button class="cai-btn cai-dep" onclick="abrirMovCaixinha(\''+cx.id+'\',\''+cx.nome+'\',\''+cx.emoji+'\',\'Depósito\','+cx.saldo+')">+ Depositar</button><button class="cai-btn cai-ret" onclick="abrirMovCaixinha(\''+cx.id+'\',\''+cx.nome+'\',\''+cx.emoji+'\',\'Retirada\','+cx.saldo+')">− Retirar</button></div>';
+      cards+='<button onclick="abrirEditCaixinha(\''+cx.id+'\')" style="width:100%;margin-top:8px;padding:7px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--az);font-size:12px;cursor:pointer;font-weight:600">✏️ Editar caixinha</button>';
       cards+='<button onclick="excluirCaixinha(\''+cx.id+'\',\''+cx.nome+'\',event)" style="width:100%;margin-top:8px;padding:7px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--mu);font-size:12px;cursor:pointer" onmouseover="this.style.background=\'var(--rl)\';this.style.color=\'var(--r)\';" onmouseout="this.style.background=\'none\';this.style.color=\'var(--mu)\';">🗑️ Excluir caixinha</button></div>';
     });
     document.getElementById('cai-cards').innerHTML=cards;
@@ -1629,6 +1710,51 @@ async function excluirCaixinha(id, nome, event){
   badge('✅ Caixinha excluída!','ok');
 }
 
+let editCaiId = '';
+
+function abrirEditCaixinha(id){
+  const cx = caixinhas.find(x=>x.id===id);
+  if(!cx) return;
+  editCaiId = id;
+  document.getElementById('ecai-nome').value = cx.nome||'';
+  document.getElementById('ecai-emoji').value = cx.emoji||'🐷';
+  document.getElementById('ecai-dono').value = cx.dono||'';
+  document.getElementById('ecai-meta').value = cx.meta||'';
+  document.getElementById('ecai-meta-mensal').value = cx.metaMensal||'';
+  document.getElementById('ecai-meta-pct').value = cx.metaPct||'';
+  document.getElementById('ecai-pct-cdi').value = cx.pctCdi||'';
+  document.getElementById('ecai-inicio-cdi').value = cx.inicioCdi||'';
+  document.getElementById('ecai-err').style.display='none';
+  document.getElementById('ovl-edit-cai').classList.add('open');
+}
+
+async function salvarEditCaixinha(){
+  const nome = document.getElementById('ecai-nome').value.trim();
+  const emoji = document.getElementById('ecai-emoji').value.trim()||'🐷';
+  const dono = document.getElementById('ecai-dono').value.trim();
+  const meta = parseFloat(document.getElementById('ecai-meta').value)||0;
+  const metaMensal = parseFloat(document.getElementById('ecai-meta-mensal').value)||0;
+  const metaPct = parseFloat(document.getElementById('ecai-meta-pct').value)||0;
+  const pctCdi = parseFloat(document.getElementById('ecai-pct-cdi').value)||0;
+  const inicioCdi = document.getElementById('ecai-inicio-cdi').value||null;
+  const err = document.getElementById('ecai-err');
+  if(!nome){err.textContent='Informe o nome.';err.style.display='';return;}
+  err.style.display='none';
+  badge('🔄 Salvando...','sync');
+  const {error} = await supa.from('caixinhas').update({
+    nome, emoji, dono, meta,
+    meta_mensal: metaMensal,
+    meta_percentual: metaPct,
+    percentual_cdi: pctCdi,
+    data_inicio_cdi: inicioCdi
+  }).eq('id', editCaiId);
+  if(error){badge('❌ Erro: '+error.message,'err');return;}
+  fecharModal('ovl-edit-cai');
+  await carregarTudo();
+  renderPatrimonio();
+  badge('✅ Caixinha atualizada!','ok');
+}
+
 async function criarCaixinha(){
   const nome=document.getElementById('ncai-nome').value.trim();
   const emoji=document.getElementById('ncai-emoji').value.trim()||'🐷';
@@ -1636,11 +1762,13 @@ async function criarCaixinha(){
   const meta=parseFloat(document.getElementById('ncai-meta').value)||0;
   const metaMensal=parseFloat(document.getElementById('ncai-meta-mensal').value)||0;
   const metaPct=parseFloat(document.getElementById('ncai-meta-pct').value)||0;
+  const pctCdi=parseFloat(document.getElementById('ncai-pct-cdi').value)||0;
+  const inicioCdi=document.getElementById('ncai-inicio-cdi').value||null;
   const err=document.getElementById('ncai-err');
   if(!nome){err.textContent='Informe o nome da caixinha.';err.style.display='';return;}
   err.style.display='none';
   badge('🔄 Criando caixinha...','sync');
-  const {error}=await supa.from('caixinhas').insert({user_id:authUser.id,nome,emoji,dono,meta,ativa:true,meta_mensal:metaMensal,meta_percentual:metaPct});
+  const {error}=await supa.from('caixinhas').insert({user_id:authUser.id,nome,emoji,dono,meta,ativa:true,meta_mensal:metaMensal,meta_percentual:metaPct,percentual_cdi:pctCdi,data_inicio_cdi:inicioCdi});
   if(error){badge('❌ Erro: '+error.message,'err');return;}
   fecharModal('ovl-nova-cai');
   await carregarTudo();
@@ -2128,6 +2256,27 @@ function confirmarSaida(){}
   },{passive:true});
 })();
 
+// ── CDI — buscar taxa do Banco Central ────────────────────
+async function buscarCDI(){
+  try {
+    const resp = await fetch('/api/cdi');
+    if(!resp.ok) throw new Error('status '+resp.status);
+    const data = await resp.json();
+    if(data && data.length > 0){
+      // Pegar o último valor disponível (taxa mensal em %)
+      taxaCDImensal = parseFloat(data[data.length-1].valor);
+      ls.set('cf_cdi_taxa', taxaCDImensal);
+      ls.set('cf_cdi_data', data[data.length-1].data);
+      console.log('CDI mensal:', taxaCDImensal+'%', 'ref:', data[data.length-1].data);
+    }
+  } catch(e) {
+    // Fallback: usar valor salvo em cache ou estimativa
+    const cached = ls.get('cf_cdi_taxa', 0);
+    taxaCDImensal = cached || 0.83; // ~10% ao ano como fallback
+    console.warn('CDI fallback:', taxaCDImensal);
+  }
+}
+
 // ── START ──────────────────────────────────────────────────
 initTema();
 // Timeout de segurança: se após 8s a splash ainda estiver visível, esconde
@@ -2142,6 +2291,7 @@ setTimeout(function(){
     }
   }
 }, 8000);
+buscarCDI(); // busca em paralelo
 init().then(function(){ verificarVencimentos(); }).catch(function(err){
   console.error('Erro no init:', err);
   esconderSplash();
