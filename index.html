@@ -2248,7 +2248,7 @@ function atualizarBtnNotif(){
   const ativo = ls.get('cf_notif_venc','on') === 'on';
   const btn = document.getElementById('btn-notif-venc');
   if(!btn) return;
-  btn.textContent = ativo ? '🔔 Ativar' : '🔕 Desativado';
+  btn.textContent = ativo ? '🔔 Ativado' : '🔕 Desativado';
   btn.style.background = ativo ? '#475569' : '#DC2626';
   btn.style.color = '#F1F5F9';
 }
@@ -2358,7 +2358,7 @@ function abrirGraficoAnual(tipo){
 let invModalChart = null;
 function abrirGraficoInvestimentos(){
   const isDark = document.documentElement.classList.contains('dark');
-  const labelColor = isDark ? '#94A3B8' : '#6B6B6B';
+  const legendColor = isDark ? '#FFFFFF' : '#111827';
   // Agrupar investimentos por categoria
   const grupos = {};
   trans.filter(function(t){return t.tipo==='Guardado';}).forEach(function(t){
