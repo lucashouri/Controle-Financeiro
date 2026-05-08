@@ -2546,5 +2546,21 @@ init().then(function(){ verificarVencimentos(); }).catch(function(err){
   </div>
 </div>
 
+<!-- MODAL VER FATURA DO MÊS -->
+<div class="ovl" id="ovl-ver-fatura" onclick="fecharSe(event,'ovl-ver-fatura')">
+  <div class="mdl" style="max-width:480px">
+    <div class="mhdr">
+      <span class="mtit" id="vf-titulo">Fatura</span>
+      <button class="mcls" onclick="fecharModal('ovl-ver-fatura')">×</button>
+    </div>
+    <div style="font-size:12px;color:var(--mu);margin-bottom:12px" id="vf-sub"></div>
+    <div id="vf-lista" style="max-height:60vh;overflow-y:auto"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0 0;border-top:1px solid var(--border);margin-top:4px">
+      <span style="font-size:13px;color:var(--mu);font-weight:600">Total da fatura</span>
+      <span style="font-size:15px;font-weight:800;color:var(--r)" id="vf-total"></span>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
