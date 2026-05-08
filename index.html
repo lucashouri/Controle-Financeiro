@@ -479,7 +479,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
     <div id="pat-empty" style="display:none;margin-top:12px" class="empty"><div class="ei">🏦</div><p class="ep">Nenhum investimento registrado.<br>Toque em + e selecione Investimentos.</p></div>
   </div>
 
-  <!-- GRÁFICOS -div id="tab-transacoes" style="display:none">
+  <div id="tab-transacoes" style="display:none">
     <!-- BUSCA -->
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
@@ -553,7 +553,10 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
           <div style="font-size:13px;font-weight:600">🔔 Alertas de vencimento</div>
           <div style="font-size:12px;color:var(--mu)">Aviso quando fatura está próxima do vencimento</div>
         </div>
-        <button onclick="pedirPermissaoNotificacao()" class="cfg-btn">Ativar</button>
+        <div style="display:flex;gap:8px">
+          <button onclick="pedirPermissaoNotificacao()" class="cfg-btn">Ativar</button>
+          <button onclick="toggleNotifVenc()" id="btn-notif-venc" class="cfg-btn" style="background:#334155">Desativar</button>
+        </div>
       </div>
     </div>
     <div class="stcard">
@@ -1452,6 +1455,7 @@ function toggleDia(id){
 
 // ── RENDER CATEGORIAS ─────────────────────────────────────
 function renderCats(){
+  initNotifBtn();
   const mk=(arr,tipo,tipoKey)=>arr.map((cat,i)=>{
     const icon=(cat.charCodeAt(0)>127)?'':gi(cat,tipo)+' ';
     return '<div class="catitem"><span style="font-size:13px;font-weight:500">'+icon+cat+'</span><button class="catdel" onclick="rmCat(\''+tipoKey+'\','+i+')">×</button></div>';
@@ -2196,6 +2200,7 @@ function initTema(){
 
 // ── NOTIFICAÇÕES DE VENCIMENTO ────────────────────────────
 function verificarVencimentos(){
+  if(ls.get('cf_notif_venc','on') === 'off') return;
   const hoje=new Date();
   const diaHoje=hoje.getDate();
   const alertas=[];
@@ -2231,6 +2236,27 @@ function verificarVencimentos(){
   // Tentar notificação nativa também
   if('Notification' in window&&Notification.permission==='granted'){
     alertas.forEach(function(msg){new Notification('Controle Financeiro',{body:msg,icon:'/icon.svg'});});
+  }
+}
+
+function toggleNotifVenc(){
+  const atual = ls.get('cf_notif_venc', 'on');
+  const novo = atual === 'on' ? 'off' : 'on';
+  ls.set('cf_notif_venc', novo);
+  const btn = document.getElementById('btn-notif-venc');
+  if(btn){
+    btn.textContent = novo === 'on' ? 'Desativar' : 'Ativar';
+    btn.style.background = novo === 'on' ? '#334155' : '#DC2626';
+  }
+  badge(novo === 'on' ? '🔔 Alertas ativados' : '🔕 Alertas desativados', novo === 'on' ? 'ok' : 'err');
+}
+
+function initNotifBtn(){
+  const atual = ls.get('cf_notif_venc', 'on');
+  const btn = document.getElementById('btn-notif-venc');
+  if(btn){
+    btn.textContent = atual === 'on' ? 'Desativar' : 'Ativar novamente';
+    btn.style.background = atual === 'on' ? '#334155' : '#DC2626';
   }
 }
 
