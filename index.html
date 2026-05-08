@@ -898,6 +898,14 @@ async function logout(){
   document.getElementById('auth-screen').style.display='flex';
 }
 
+function esconderSplash(){
+  const splash=document.getElementById('splash-screen');
+  if(splash&&splash.style.display!=='none'){
+    splash.classList.add('hide');
+    setTimeout(()=>{splash.style.display='none';},500);
+  }
+}
+
 function showApp(){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('main-app').style.display='';
@@ -906,9 +914,7 @@ function showApp(){
   document.getElementById('fdt').value=today();
   popularCatRec();
   render();
-  // Esconder splash com fade
-  const splash=document.getElementById('splash-screen');
-  if(splash){splash.classList.add('hide');setTimeout(()=>splash.style.display='none',500);}
+  esconderSplash();
 }
 function showLoading(v){const el=document.getElementById('loading-screen');el.style.display=v?'flex':'none';}
 
@@ -2073,7 +2079,23 @@ function confirmarSaida(){}
 
 // ── START ──────────────────────────────────────────────────
 initTema();
-init().then(function(){ verificarVencimentos(); });
+// Timeout de segurança: se após 8s a splash ainda estiver visível, esconde
+setTimeout(function(){
+  const splash=document.getElementById('splash-screen');
+  if(splash&&splash.style.display!=='none'){
+    console.warn('Splash timeout — forçando saída');
+    esconderSplash();
+    // Se o main-app não está visível, mostrar a tela de auth
+    if(document.getElementById('main-app').style.display==='none'||!document.getElementById('main-app').style.display){
+      document.getElementById('auth-screen').style.display='flex';
+    }
+  }
+}, 8000);
+init().then(function(){ verificarVencimentos(); }).catch(function(err){
+  console.error('Erro no init:', err);
+  esconderSplash();
+  document.getElementById('auth-screen').style.display='flex';
+});
 </script>
 </body>
 </html>
