@@ -1156,10 +1156,14 @@ function renderPatrimonio(){
       const cls=cx.dono==='Lucas'?'cai-lucas':cx.dono==='Dayanna'?'cai-dayanna':'';
       const pct=cx.meta>0?Math.min(100,(cx.saldo/cx.meta*100)).toFixed(0):0;
       cards+='<div class="cai-card '+cls+'">';
-      if(cx.dono)cards+='<div class="cai-dono" style="color:'+cor+'">'+cx.dono+'</div>';
-      cards+='<div class="cai-nome">'+cx.emoji+' '+cx.nome+'</div>';
-      cards+='<div class="cai-saldo-lbl">Saldo atual</div>';
-      cards+='<div class="cai-saldo-val" style="color:'+cor+'">'+brl(cx.saldo)+'</div>';
+      cards+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
+      cards+='<div style="display:flex;align-items:center;gap:6px"><span style="font-size:16px">'+cx.emoji+'</span><span class="cai-nome" style="margin:0">'+cx.nome+'</span></div>';
+      if(cx.dono)cards+='<span class="cai-dono" style="color:'+cor+';margin:0;font-size:11px;padding:2px 8px;background:'+cor+'22;border-radius:20px">'+cx.dono+'</span>';
+      cards+='</div>';
+      cards+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+      cards+='<div style="font-size:11px;color:var(--lb);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Saldo atual</div>';
+      cards+='<div style="font-size:20px;font-weight:800;color:'+cor+'">'+brl(cx.saldo)+'</div>';
+      cards+='</div>';
       if(cx.meta>0)cards+='<div class="cai-meta-bar"><div class="cai-meta-fill" style="width:'+pct+'%;background:'+cor+'"></div></div><div class="cai-meta-txt">Meta: '+brl(cx.meta)+' ('+pct+'%)</div>';
       // Indicador de meta mensal
       if(cx.metaMensal>0||cx.metaPct>0){
@@ -1194,19 +1198,21 @@ function renderPatrimonio(){
         const inicio = new Date(cx.inicioCdi+'T00:00:00');
         const hoje2 = new Date();
         // Calcular meses completos desde início
-        const mesesDecorridos = (hoje2.getFullYear()-inicio.getFullYear())*12 + (hoje2.getMonth()-inicio.getMonth());
-        // Calcular total depositado desde o início do CDI
+        // Calcular dias decorridos desde o início
+        const diasDecorridos = Math.max(0, Math.floor((hoje2-inicio)/(1000*60*60*24)));
+        const mesesDecorridos = diasDecorridos / 30.44; // meses fracionados
+        // Total depositado/retirado desde o início
         const depositosTotais = caiMovs.filter(function(m){
           return m.caixinhaId===cx.id&&m.tipo==='Depósito'&&new Date(m.data+'T00:00:00')>=inicio;
         }).reduce(function(s,m){return s+m.valor;},0);
         const retiradaTotais = caiMovs.filter(function(m){
           return m.caixinhaId===cx.id&&m.tipo==='Retirada'&&new Date(m.data+'T00:00:00')>=inicio;
         }).reduce(function(s,m){return s+m.valor;},0);
-        const saldoBase = depositosTotais - retiradaTotais;
-        // Rendimento estimado com juros compostos
-        const saldoComRendimento = saldoBase * Math.pow(1 + taxaEfetiva/100, Math.max(mesesDecorridos,0));
+        const saldoBase = Math.max(0, depositosTotais - retiradaTotais);
+        // Rendimento com juros compostos (usando meses fracionados para precisão diária)
+        const saldoComRendimento = saldoBase > 0 ? saldoBase * Math.pow(1 + taxaEfetiva/100, mesesDecorridos) : 0;
         const rendimento = Math.max(0, saldoComRendimento - saldoBase);
-        // Rendimento do mês atual
+        // Estimativa do mês corrente
         const rendMes = cx.saldo * taxaEfetiva / 100;
         const dataCDIref = ls.get('cf_cdi_data','');
         cards+='<div class="cdi-box">';
