@@ -1552,12 +1552,13 @@ function renderCartoes(){
       html+='<div style="margin-top:12px;border-top:1px solid var(--bg);padding-top:10px">';
       html+='<div style="font-size:11px;color:var(--lb);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Faturas pagas</div>';
       fatuHist.forEach(function(f){
-        html+='<div class="fat-hist-item">';
+        html+='<div class="fat-hist-item ano-card-click" onclick="verFaturaMes(\''+cc.id+'\','+f.mes+','+f.ano+')">';
         html+='<div><div class="fat-hist-mes">'+MESES[f.mes]+' '+f.ano+'</div>';
         html+='<div class="fat-hist-data">Pago em '+td(f.data_pagamento).toLocaleDateString('pt-BR')+'</div></div>';
         html+='<div style="display:flex;align-items:center;gap:8px">';
         html+='<span class="fat-hist-val">'+brl(f.valor_pago)+'</span>';
-        html+='<button class="fat-hist-desfazer" onclick="estornarFatura(\''+cc.id+'\','+f.mes+','+f.ano+')">↩</button>';
+        html+='<span style="font-size:10px;color:var(--mu)">ver ›</span>';
+        html+='<button class="fat-hist-desfazer" onclick="event.stopPropagation();estornarFatura(\''+cc.id+'\','+f.mes+','+f.ano+')" title="Desfazer">↩</button>';
         html+='</div></div>';
       });
       html+='</div>';
@@ -2289,6 +2290,34 @@ function onBuscaAtivada(){
 
 // Funções vazias para não quebrar referências do modal
 function fecharExitModal(){}
+
+function verFaturaMes(cartaoId, m, a){
+  const cc = cartoes.find(function(x){return x.id===cartaoId;});
+  if(!cc) return;
+  const fatura = faturasPagas.find(function(f){return f.cartao_id===cartaoId&&f.mes===m&&f.ano===a;});
+  const gastosMes = cc.gastos.filter(function(g){
+    const d = td(g.data);
+    return d.getMonth()===m && d.getFullYear()===a;
+  }).sort(function(a,b){return td(b.data)-td(a.data);});
+  const total = gastosMes.reduce(function(s,g){return s+g.valor;},0);
+  document.getElementById('vf-titulo').textContent = '💳 '+cc.nome+' — '+MESES[m]+' '+a;
+  document.getElementById('vf-sub').textContent = fatura ? 'Pago em '+td(fatura.data_pagamento).toLocaleDateString('pt-BR')+' · '+gastosMes.length+' lançamento'+(gastosMes.length!==1?'s':'') : gastosMes.length+' lançamento'+(gastosMes.length!==1?'s':'');
+  document.getElementById('vf-total').textContent = brl(total);
+  const lista = document.getElementById('vf-lista');
+  if(!gastosMes.length){
+    lista.innerHTML='<p style="color:var(--mu);text-align:center;padding:24px;font-size:14px">Nenhum gasto neste mês.</p>';
+  } else {
+    lista.innerHTML = gastosMes.map(function(g){
+      var parc = g.parcela&&g.totalParcelas>1?' <span style="font-size:10px;background:var(--azl);color:var(--az);padding:1px 5px;border-radius:4px">'+g.parcela+'/'+g.totalParcelas+'</span>':'';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">'
+        +'<div><div style="font-size:13px;font-weight:600">'+g.desc+parc+'</div>'
+        +'<div style="font-size:11px;color:var(--mu);margin-top:2px">'+td(g.data).toLocaleDateString('pt-BR')+(g.obs?' · '+g.obs:'')+'</div></div>'
+        +'<span style="font-size:14px;font-weight:700;color:var(--r)">'+brl(g.valor)+'</span>'
+        +'</div>';
+    }).join('');
+  }
+  document.getElementById('ovl-ver-fatura').classList.add('open');
+}
 function confirmarSaida(){}
 
 // ── GRÁFICO ANUAL ────────────────────────────────────────────
@@ -2407,10 +2436,13 @@ function abrirGraficoInvestimentos(){
               boxWidth:12,
               boxHeight:12,
               generateLabels:function(chart){
+                var lc = document.documentElement.classList.contains('dark') ? '#FFFFFF' : '#111827';
                 return chart.data.labels.map(function(l,i){
                   return {
                     text:l+' ('+brl(valores[i])+')',
                     fillStyle:cores[i]||'#888',
+                    strokeStyle:cores[i]||'#888',
+                    fontColor:lc,
                     hidden:false,
                     index:i
                   };
