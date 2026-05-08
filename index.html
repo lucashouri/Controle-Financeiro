@@ -1311,7 +1311,7 @@ function renderPatrimonio(){
   const patrimonioTotal=totalGuardado+totalCaixinhas;
   let heroHtml='<div class="pat-hero"><div class="pat-hero-lbl">Patrimônio Total</div><div class="pat-hero-val">'+brl(patrimonioTotal)+'</div><div class="pat-hero-sub">Caixinhas + Investimentos</div><div class="pat-hero-row">';
   heroHtml+='<div class="pat-mini"><div class="pat-mini-lbl">🐷 Caixinhas</div><div class="pat-mini-val" style="color:#86EFAC">'+brl(totalCaixinhas)+'</div></div>';
-  heroHtml+='<div class="pat-mini"><div class="pat-mini-lbl">📦 Investimentos</div><div class="pat-mini-val" style="color:#93C5FD">'+brl(totalGuardado)+'</div></div>';
+  heroHtml+='<div class="pat-mini ano-card-click" onclick="abrirGraficoInvestimentos()" title="Ver gráfico"><div class="pat-mini-lbl">📦 Investimentos ↗</div><div class="pat-mini-val" style="color:#93C5FD">'+brl(totalGuardado)+'</div></div>';
   heroHtml+='</div></div>';
   document.getElementById('pat-hero-block').innerHTML=heroHtml;
   const lista=document.getElementById('pat-lista');
@@ -2337,6 +2337,69 @@ function abrirGraficoAnual(tipo){
         scales:{
           x:{grid:{display:false},ticks:{font:{family:'system-ui',size:11},color:labelColor}},
           y:{grid:{color:gridColor},ticks:{font:{family:'system-ui',size:11},color:labelColor,callback:function(v){return 'R$'+(v>=1000?(v/1000).toFixed(0)+'k':v);}}}
+        }
+      }
+    });
+  },50);
+}
+
+// ── GRÁFICO DE INVESTIMENTOS (ROSCA) ──────────────────────
+let invModalChart = null;
+function abrirGraficoInvestimentos(){
+  const isDark = document.documentElement.classList.contains('dark');
+  const labelColor = isDark ? '#94A3B8' : '#6B6B6B';
+  // Agrupar investimentos por categoria
+  const grupos = {};
+  trans.filter(function(t){return t.tipo==='Guardado';}).forEach(function(t){
+    const cat = t.categoria||'Outros';
+    grupos[cat] = (grupos[cat]||0) + t.valor;
+  });
+  const labels = Object.keys(grupos);
+  const valores = Object.values(grupos);
+  const total = valores.reduce(function(s,v){return s+v;},0);
+  const cores = ['#2563EB','#16A34A','#D97706','#DC2626','#7C3AED','#0891B2','#F59E0B','#10B981'];
+  const melhorCat = labels[valores.indexOf(Math.max(...valores))];
+  document.getElementById('ano-modal-titulo').textContent = '📦 Investimentos — ' + ano;
+  document.getElementById('ano-modal-sub').textContent = 'Maior posição: ' + melhorCat;
+  document.getElementById('ano-modal-total').textContent = 'Total: ' + brl(total);
+  document.getElementById('ano-modal-total').style.color = '#2563EB';
+  document.getElementById('ano-modal').classList.add('open');
+  if(anoModalChart) anoModalChart.destroy();
+  setTimeout(function(){
+    anoModalChart = new Chart(document.getElementById('ano-modal-chart'),{
+      type:'doughnut',
+      data:{
+        labels:labels,
+        datasets:[{
+          data:valores,
+          backgroundColor:cores.slice(0,labels.length),
+          borderWidth:0
+        }]
+      },
+      options:{
+        responsive:true,
+        cutout:'60%',
+        plugins:{
+          legend:{
+            position:'right',
+            labels:{
+              font:{family:'system-ui',size:11},
+              color:labelColor,
+              padding:10,
+              boxWidth:12,
+              boxHeight:12,
+              generateLabels:function(chart){
+                return chart.data.labels.map(function(l,i){
+                  return {
+                    text:l+' ('+brl(valores[i])+')',
+                    fillStyle:cores[i]||'#888',
+                    hidden:false,
+                    index:i
+                  };
+                });
+              }
+            }
+          }
         }
       }
     });
