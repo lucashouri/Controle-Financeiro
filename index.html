@@ -553,10 +553,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
           <div style="font-size:13px;font-weight:600">🔔 Alertas de vencimento</div>
           <div style="font-size:12px;color:var(--mu)">Aviso quando fatura está próxima do vencimento</div>
         </div>
-        <div style="display:flex;gap:8px">
-          <button onclick="pedirPermissaoNotificacao()" class="cfg-btn">Ativar</button>
-          <button onclick="toggleNotifVenc()" id="btn-notif-venc" class="cfg-btn" style="background:#334155">Desativar</button>
-        </div>
+        <button onclick="toggleNotifVenc()" id="btn-notif-venc" class="cfg-btn">🔔 Ativar</button>
       </div>
     </div>
     <div class="stcard">
@@ -2243,21 +2240,21 @@ function toggleNotifVenc(){
   const atual = ls.get('cf_notif_venc', 'on');
   const novo = atual === 'on' ? 'off' : 'on';
   ls.set('cf_notif_venc', novo);
-  const btn = document.getElementById('btn-notif-venc');
-  if(btn){
-    btn.textContent = novo === 'on' ? 'Desativar' : 'Ativar';
-    btn.style.background = novo === 'on' ? '#334155' : '#DC2626';
-  }
+  atualizarBtnNotif();
   badge(novo === 'on' ? '🔔 Alertas ativados' : '🔕 Alertas desativados', novo === 'on' ? 'ok' : 'err');
 }
 
-function initNotifBtn(){
-  const atual = ls.get('cf_notif_venc', 'on');
+function atualizarBtnNotif(){
+  const ativo = ls.get('cf_notif_venc','on') === 'on';
   const btn = document.getElementById('btn-notif-venc');
-  if(btn){
-    btn.textContent = atual === 'on' ? 'Desativar' : 'Ativar novamente';
-    btn.style.background = atual === 'on' ? '#334155' : '#DC2626';
-  }
+  if(!btn) return;
+  btn.textContent = ativo ? '🔔 Ativar' : '🔕 Desativado';
+  btn.style.background = ativo ? '#475569' : '#DC2626';
+  btn.style.color = '#F1F5F9';
+}
+
+function initNotifBtn(){
+  atualizarBtnNotif();
 }
 
 async function pedirPermissaoNotificacao(){
