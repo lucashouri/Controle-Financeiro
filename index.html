@@ -252,6 +252,14 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .fat-hist-data{font-size:11px;color:var(--mu);margin-top:1px}
 .fat-hist-val{font-size:13px;font-weight:700;color:var(--v)}
 .fat-hist-desfazer{font-size:11px;color:var(--mu);background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer}
+.cai-meta-mensal{margin-top:10px;padding:10px 12px;background:var(--bg);border-radius:10px;border:1px solid var(--border)}
+.cai-meta-mensal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.cai-meta-mensal-lbl{font-size:11px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.04em}
+.cai-meta-mensal-val{font-size:12px;font-weight:700}
+.cai-meta-bar-wrap{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.cai-meta-bar-fill{height:100%;border-radius:3px;transition:width .4s ease}
+.cai-projecao{margin-top:8px;font-size:12px;color:var(--mu);padding:8px 12px;background:var(--azl);border-radius:8px;line-height:1.5}
+.cai-alerta{margin-top:8px;font-size:12px;font-weight:600;color:var(--r);padding:8px 12px;background:var(--rl);border-radius:8px}
 .cc-venc{font-size:11px;color:var(--mu);margin-top:2px}
 .cc-tipo-btn.on-parc{background:var(--az);color:#fff}
 .dash-hero{border-radius:20px;padding:22px 20px 20px;margin-bottom:16px;position:relative;overflow:hidden;background:linear-gradient(135deg,#0F172A 0%,#1E3A5F 50%,#1E40AF 100%)}
@@ -942,7 +950,7 @@ async function carregarTudo(){
     caiMovs=(mov.data||[]).map(r=>({id:r.id,caixinhaId:r.caixinha_id,desc:r.descricao,tipo:r.tipo,valor:r.valor,saldoApos:r.saldo_apos,data:r.data}));
     caixinhas=(cai.data||[]).map(r=>{
       const saldo=caiMovs.filter(m=>m.caixinhaId===r.id).reduce((s,m)=>m.tipo==='Depósito'?s+m.valor:s-m.valor,0);
-      return{id:r.id,nome:r.nome,dono:r.dono||'',emoji:r.emoji||'🐷',meta:r.meta||0,ativa:r.ativa,saldo:+saldo.toFixed(2)};
+      return{id:r.id,nome:r.nome,dono:r.dono||'',emoji:r.emoji||'🐷',meta:r.meta||0,ativa:r.ativa,saldo:+saldo.toFixed(2),metaMensal:r.meta_mensal||0,metaPct:r.meta_percentual||0};
     });
     recorrentes=(rec.data||[]).map(r=>({nid:r.id,nome:r.nome,tipo:r.tipo,categoria:r.categoria,valor:r.valor,dia:r.dia_mes,ativo:r.ativo}));
   }catch(e){badge('Erro ao carregar: '+e.message,'err');}
