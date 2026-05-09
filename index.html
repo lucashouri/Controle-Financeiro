@@ -1542,7 +1542,28 @@ function renderCartoes(){
     const disp=dispReal;
     const dispCor=disp>=0?'var(--v)':'var(--r)';
     const gastosMes=cc.gastos.filter(function(g){const d=td(g.data);return d.getMonth()===mes&&d.getFullYear()===ano;}).sort(function(a,b){return td(b.data)-td(a.data);});
-    html+='<div class="cc-card"><div class="cc-card-stripe" style="background:'+cc.cor+'"></div><div class="cc-card-header"><div class="cc-card-icon" style="background:'+cc.cor+'22">'+cc.bandeira+'</div><div class="cc-card-info"><div class="cc-card-nome">'+cc.nome+'</div><div class="cc-card-limite">Limite: '+brl(cc.limite)+' · Disponível: <span style="color:'+dispCor+'">'+brl(disp)+'</span></div></div><div class="cc-card-actions"><button class="cc-card-btn" onclick="abrirModalCartao(\''+cc.id+'\')" title="Editar">✏️</button><button class="cc-card-btn" style="color:#ccc" onclick="removerCartao(\''+cc.id+'\')">🗑️</button></div></div>';
+    // ── Card compacto (header clicável) ──
+    var ccId='cc-det-'+cc.id;
+    var fatLabel=faturaMes?'✅ Paga':'⚠️ Em aberto';
+    var fatCor=faturaMes?'var(--v)':'var(--am)';
+    html+='<div class="cc-card">';
+    // Mini header clicável
+    html+='<div class="cc-card-mini" onclick="toggleCCDetails(\'' + ccId + '\')">';
+    html+='<div class="cc-mini-icon" style="background:'+cc.cor+'22;font-size:22px">'+cc.bandeira+'</div>';
+    html+='<div class="cc-mini-info">';
+    html+='<div class="cc-mini-nome">'+cc.nome+'</div>';
+    html+='<div class="cc-mini-sub">'+brl(gastoMesCard)+' de '+brl(cc.limite)+(cc.diaVenc?' · vence dia '+cc.diaVenc:'')+'</div>';
+    html+='</div>';
+    html+='<div class="cc-mini-right">';
+    html+='<div class="cc-mini-valor" style="color:'+corProgresso(pct)+'">'+pct.toFixed(0)+'%</div>';
+    if(gastosMes.length>0||faturaMes) html+='<div class="cc-mini-badge" style="background:'+fatCor+'22;color:'+fatCor+'">'+fatLabel+'</div>';
+    html+='<span class="cc-mini-chevron" id="chev-' + ccId + '">›</span>';
+    html+='</div></div>';
+    // Barra de progresso mini
+    html+='<div style="height:3px;background:var(--border)"><div style="height:100%;width:'+pct.toFixed(0)+'%;background:'+corProgresso(pct)+';transition:width .4s"></div></div>';
+    // Detalhes expansíveis
+    html+='<div class="cc-details" id="'+ccId+'">';
+    html+='<div class="cc-card-header"><div class="cc-card-icon" style="background:'+cc.cor+'22">'+cc.bandeira+'</div><div class="cc-card-info"><div class="cc-card-nome">'+cc.nome+'</div><div class="cc-card-limite">Limite: '+brl(cc.limite)+' · Disponível: <span style="color:'+dispCor+'">'+brl(disp)+'</span></div></div><div class="cc-card-actions"><button class="cc-card-btn" onclick="abrirModalCartao(\''+cc.id+'\')" title="Editar">✏️</button><button class="cc-card-btn" style="color:#ccc" onclick="removerCartao(\''+cc.id+'\')">🗑️</button></div></div>';
     html+='<div class="cc-progress-wrap"><div class="cc-progress-top"><span class="cc-progress-gasto" style="color:'+cor+'">'+brl(gastoMesCard)+'</span><span class="cc-progress-pct" style="background:'+cor+'22;color:'+cor+'">'+pct.toFixed(0)+'%</span></div><div class="cc-progress-track"><div class="cc-progress-fill" style="width:'+pct+'%;background:'+cor+'"></div></div><div class="cc-progress-labels"><span class="cc-progress-lbl">R$ 0</span><span class="cc-progress-lbl">Limite: '+brl(cc.limite)+'</span></div></div>';
     if(gastosMes.length){
       html+='<div class="cc-gastos-lista"><div style="font-size:11px;color:var(--lb);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Gastos em '+MESES[mes]+'</div>';
@@ -1583,9 +1604,19 @@ function renderCartoes(){
       });
       html+='</div>';
     }
-    html+='<button class="cc-add-btn" style="margin-top:8px" onclick="abrirModalGasto(\''+cc.id+'\')">+ Adicionar gasto em '+cc.nome+'</button></div>';
+    html+='<button class="cc-add-btn" style="margin-top:8px" onclick="abrirModalGasto(\''+cc.id+'\')">+ Adicionar gasto em '+cc.nome+'</button>';
+    html+='</div>'; // fecha cc-details
+    html+='</div>'; // fecha cc-card
   });
   document.getElementById('cc-lista').innerHTML=html;
+}
+
+function toggleCCDetails(id){
+  const det = document.getElementById(id);
+  const chev = document.getElementById('chev-'+id);
+  if(!det) return;
+  const open = det.classList.toggle('open');
+  if(chev){chev.classList.toggle('open', open);}
 }
 
 function abrirModalCartao(id){
