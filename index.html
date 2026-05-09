@@ -198,8 +198,21 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .cc-hero-pill{flex:1;min-width:80px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;align-items:flex-start}
 .cc-hero-pill-lbl{font-size:10px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;white-space:nowrap}
 .cc-hero-pill-val{font-size:13px;font-weight:700;color:#fff;word-break:break-word;line-height:1.2}
-.cc-card{background:var(--card);border-radius:16px;border:1px solid var(--border);padding:16px;margin-bottom:12px;position:relative;overflow:hidden}
-.cc-card-stripe{position:absolute;top:0;left:0;right:0;height:4px;border-radius:4px 4px 0 0}
+.cc-card{background:var(--card);border-radius:14px;border:1.5px solid var(--border);margin-bottom:10px;overflow:hidden;transition:box-shadow .2s}
+.cc-card-mini{display:flex;align-items:center;padding:13px 15px;cursor:pointer;gap:12px;user-select:none}
+.cc-card-mini:active{opacity:.85}
+.cc-mini-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.cc-mini-info{flex:1;min-width:0}
+.cc-mini-nome{font-size:14px;font-weight:700;color:var(--tx)}
+.cc-mini-sub{font-size:11px;color:var(--mu);margin-top:2px}
+.cc-mini-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.cc-mini-valor{font-size:15px;font-weight:800}
+.cc-mini-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.cc-mini-chevron{font-size:14px;color:var(--mu);transition:transform .25s;margin-top:2px}
+.cc-mini-chevron.open{transform:rotate(90deg)}
+.cc-details{display:none;padding:14px;border-top:1px solid var(--bg)}
+.cc-details.open{display:block}
+.cc-card-stripe{display:none}
 .cc-card-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .cc-card-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .cc-card-info{flex:1}
