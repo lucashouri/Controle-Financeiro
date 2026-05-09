@@ -1542,6 +1542,8 @@ function renderCartoes(){
     const disp=dispReal;
     const dispCor=disp>=0?'var(--v)':'var(--r)';
     const gastosMes=cc.gastos.filter(function(g){const d=td(g.data);return d.getMonth()===mes&&d.getFullYear()===ano;}).sort(function(a,b){return td(b.data)-td(a.data);});
+    // Fatura do mês (precisa estar antes do header compacto)
+    const faturaMes=faturasPagas.find(function(f){return f.cartao_id===cc.id&&f.mes===mes&&f.ano===ano;});
     // ── Card compacto (header clicável) ──
     var ccId='cc-det-'+cc.id;
     var fatLabel=faturaMes?'✅ Paga':'⚠️ Em aberto';
@@ -1573,8 +1575,7 @@ function renderCartoes(){
       });
       html+='</div>';
     }else{html+='<div style="font-size:12px;color:var(--mu);text-align:center;padding:6px 0">Sem gastos em '+MESES[mes]+'</div>';}
-    // Fatura do mês
-    const faturaMes=faturasPagas.find(function(f){return f.cartao_id===cc.id&&f.mes===mes&&f.ano===ano;});
+    // (faturaMes já declarada acima)
     if(gastosMes.length>0||faturaMes){
       if(faturaMes){
         html+='<div class="fatura-badge paga">✅ Fatura de '+MESES[mes]+' paga em '+td(faturaMes.data_pagamento).toLocaleDateString('pt-BR')+'</div>';
