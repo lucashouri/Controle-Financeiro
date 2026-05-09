@@ -346,22 +346,24 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .ano-card-click{cursor:pointer;transition:transform .15s,box-shadow .15s}
 .ano-card-click:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.12)}
 .ano-card-click:active{transform:scale(.97)}
-.onboard-ovl{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center;padding:16px}
-.onboard-ovl.open{display:flex}
-.onboard-box{background:var(--card);border-radius:24px;width:100%;max-width:400px;overflow:hidden}
-.onboard-prog{display:flex;gap:6px;padding:16px 20px 0}
-.onboard-prog-dot{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background .3s}
-.onboard-prog-dot.done{background:var(--v)}
-.onboard-prog-dot.active{background:var(--v);opacity:.5}
-.onboard-slide{padding:28px 24px 24px}
-.onboard-icon{font-size:48px;margin-bottom:12px;text-align:center}
-.onboard-titulo{font-size:20px;font-weight:800;color:var(--tx);margin-bottom:8px;text-align:center}
-.onboard-desc{font-size:14px;color:var(--mu);line-height:1.6;text-align:center;margin-bottom:20px}
-.onboard-dica{background:var(--bg);border-radius:10px;padding:12px 14px;margin-bottom:20px}
-.onboard-dica p{font-size:13px;color:var(--tx);margin:4px 0;line-height:1.5}
-.onboard-btns{display:flex;gap:10px}
-.onboard-btn-skip{flex:0;padding:12px 16px;border:1px solid var(--border);background:none;border-radius:12px;font-size:13px;color:var(--mu);cursor:pointer;white-space:nowrap}
-.onboard-btn-next{flex:1;padding:12px;border:none;background:var(--v);border-radius:12px;font-size:14px;font-weight:700;color:#fff;cursor:pointer}
+.tut-overlay{position:fixed;inset:0;z-index:500;pointer-events:none;display:none}
+.tut-overlay.open{display:block}
+.tut-dark{position:absolute;inset:0;background:rgba(0,0,0,.75);transition:all .3s}
+.tut-hole{position:absolute;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.75);transition:all .35s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.tut-hole.pulse{animation:tutPulse 1.5s ease-in-out infinite}
+.tut-tooltip{position:absolute;background:var(--card);border-radius:16px;padding:18px 18px 14px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,.4);pointer-events:all;transition:all .3s ease;z-index:501}
+.tut-arrow{position:absolute;width:0;height:0}
+.tut-prog{display:flex;gap:5px;margin-bottom:10px}
+.tut-prog-dot{flex:1;height:3px;border-radius:2px;background:var(--border)}
+.tut-prog-dot.done{background:var(--v)}
+.tut-icon{font-size:28px;margin-bottom:6px}
+.tut-titulo{font-size:15px;font-weight:800;color:var(--tx);margin-bottom:5px}
+.tut-desc{font-size:12px;color:var(--mu);line-height:1.5;margin-bottom:12px}
+.tut-btns{display:flex;gap:8px;align-items:center}
+.tut-skip{font-size:11px;color:var(--mu);background:none;border:none;cursor:pointer;padding:4px 0;text-decoration:underline}
+.tut-next{flex:1;padding:10px;border:none;background:var(--v);border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer}
+.tut-step-lbl{font-size:10px;color:var(--mu);margin-left:auto}
+@keyframes tutPulse{0%,100%{box-shadow:0 0 0 9999px rgba(0,0,0,.75),0 0 0 0 rgba(22,163,74,.4)}50%{box-shadow:0 0 0 9999px rgba(0,0,0,.75),0 0 0 8px rgba(22,163,74,.0)}}
 .exit-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:none;align-items:center;justify-content:center;padding:24px}
 .exit-modal.open{display:flex}
 .exit-box{background:var(--card);border-radius:18px;padding:28px 24px;width:100%;max-width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -2198,107 +2200,166 @@ function setCorCartao(cor){
   });
 }
 
-// ── ONBOARDING ────────────────────────────────────────────
-const ONBOARD_STEPS = [
+// ── TUTORIAL INTERATIVO COM SPOTLIGHT ─────────────────────
+const TUT_STEPS = [
   {
-    icon: '👋',
-    titulo: 'Bem-vindo ao Controle Financeiro!',
-    desc: 'Em poucos passos você vai entender como o app funciona. Vamos lá?',
-    dica: null,
-    btn: 'Começar'
+    icon:'👋', titulo:'Bem-vindo!',
+    desc:'Vou te mostrar as principais funcionalidades em poucos passos. Toque em Próximo para começar!',
+    target:null, pos:'center'
   },
   {
-    icon: '📊',
-    titulo: 'Aba Resumo',
-    desc: 'Aqui você vê o saldo do mês, receitas e gastos. Os 3 cards do ano são clicáveis — toque neles para ver um gráfico mensal.',
-    dica: {items: ['🗓️ Navegue pelos meses com as setas no topo','📈 Clique em Receita, Gasto ou Investimentos para ver o gráfico por mês']},
-    btn: 'Próximo'
+    icon:'📊', titulo:'Aba Resumo',
+    desc:'Aqui você vê o saldo do mês. Toque nas setas para navegar entre os meses.',
+    target:'.nm', pos:'bottom', tab:null
   },
   {
-    icon: '💳',
-    titulo: 'Cartões de Crédito',
-    desc: 'Cadastre seus cartões, lance gastos e parcele compras. Ao pagar a fatura, o limite é liberado automaticamente.',
-    dica: {items: ['➕ Toque em "+ Novo cartão" para adicionar','💰 Clique em uma fatura paga para ver todos os gastos daquele mês']},
-    btn: 'Próximo'
+    icon:'📈', titulo:'Gráficos do Ano',
+    desc:'Toque em qualquer um desses cards para ver um gráfico mensal detalhado!',
+    target:'.ano-grid', pos:'bottom', tab:'resumo'
   },
   {
-    icon: '🐷',
-    titulo: 'Patrimônio e Caixinhas',
-    desc: 'Crie caixinhas para guardar dinheiro com metas e rendimento CDI. Acompanhe também seus investimentos.',
-    dica: {items: ['📈 Configure % CDI para ver o rendimento automático','🎯 Defina uma meta mensal de depósito','📦 Clique em Investimentos para ver o gráfico']},
-    btn: 'Próximo'
+    icon:'➕', titulo:'Adicionar transação',
+    desc:'Este botão verde serve para adicionar qualquer receita, gasto ou investimento.',
+    target:'#fab-btn', pos:'top', tab:'resumo'
   },
   {
-    icon: '📋',
-    titulo: 'Transações',
-    desc: 'Lance receitas, gastos e investimentos. Use a busca para encontrar qualquer transação e o filtro "Por dia" para ver o total diário.',
-    dica: {items: ['🔍 Busque por nome, categoria ou valor','📅 Agrupe por dia para ver quanto gastou em cada data','🔁 No modal de edição você pode tornar qualquer transação recorrente']},
-    btn: 'Próximo'
+    icon:'💳', titulo:'Cartões de Crédito',
+    desc:'Aqui você controla seus cartões, parcela compras e registra o pagamento de faturas.',
+    target:'[data-tab="cartoes"]', pos:'bottom', tab:null
   },
   {
-    icon: '🚀',
-    titulo: 'Tudo pronto!',
-    desc: 'Agora é com você! Comece adicionando sua primeira receita ou gasto. Qualquer dúvida, explore o app — tudo foi pensado para ser simples.',
-    dica: {items: ['💡 Toque em + para adicionar qualquer transação','⚙️ Em Categorias você personaliza tudo','🌙 Ative o tema escuro nas configurações']},
-    btn: 'Começar a usar!'
+    icon:'🐷', titulo:'Patrimônio e Caixinhas',
+    desc:'Crie caixinhas para guardar dinheiro com metas e rendimento CDI automático.',
+    target:'[data-tab="patrimonio"]', pos:'bottom', tab:null
+  },
+  {
+    icon:'🔍', titulo:'Busca nas Transações',
+    desc:'Use a busca para encontrar qualquer transação por nome, categoria ou valor.',
+    target:'#search-input', pos:'bottom', tab:'transacoes'
+  },
+  {
+    icon:'⚙️', titulo:'Categorias e Configurações',
+    desc:'Personalize suas categorias, ative o tema escuro e gerencie notificações aqui.',
+    target:'[data-tab="cats"]', pos:'bottom', tab:null
+  },
+  {
+    icon:'🚀', titulo:'Tudo pronto!',
+    desc:'Agora é com você! Comece adicionando sua primeira receita. Bom controle financeiro!',
+    target:null, pos:'center'
   }
 ];
 
-let onboardStep = 0;
+let tutStep = 0;
 
 function iniciarOnboarding(){
   if(ls.get('cf_onboard_done','') === '1') return;
-  onboardStep = 0;
-  renderOnboardStep();
-  document.getElementById('onboard-ovl').classList.add('open');
+  tutStep = 0;
+  document.getElementById('tut-overlay').classList.add('open');
+  renderTutStep();
 }
 
-function renderOnboardStep(){
-  const total = ONBOARD_STEPS.length;
-  const s = ONBOARD_STEPS[onboardStep];
+function renderTutStep(){
+  const total = TUT_STEPS.length;
+  const s = TUT_STEPS[tutStep];
+
   // Barra de progresso
   let prog = '';
   for(let i=0;i<total;i++){
-    const cls = i<onboardStep?'done':i===onboardStep?'active':'';
-    prog += '<div class="onboard-prog-dot '+cls+'"></div>';
+    prog+='<div class="tut-prog-dot'+(i<=tutStep?' done':'')+'"></div>';
   }
-  document.getElementById('onboard-prog').innerHTML = prog;
-  // Slide
-  let dica = '';
-  if(s.dica){
-    dica = '<div class="onboard-dica">' + s.dica.items.map(function(t){return '<p>'+t+'</p>';}).join('') + '</div>';
-  }
-  const isLast = onboardStep === total-1;
-  document.getElementById('onboard-slide').innerHTML =
-    '<div class="onboard-icon">'+s.icon+'</div>'+
-    '<div class="onboard-titulo">'+s.titulo+'</div>'+
-    '<div class="onboard-desc">'+s.desc+'</div>'+
-    dica+
-    '<div class="onboard-btns">'+
-    (isLast?'':'<button class="onboard-btn-skip" onclick="pularOnboarding()">Pular</button>')+
-    '<button class="onboard-btn-next" onclick="proximoOnboard()">'+s.btn+'</button>'+
-    '</div>';
+  document.getElementById('tut-prog').innerHTML = prog;
+  document.getElementById('tut-icon').textContent = s.icon;
+  document.getElementById('tut-titulo').textContent = s.titulo;
+  document.getElementById('tut-desc').textContent = s.desc;
+  document.getElementById('tut-step-lbl').textContent = (tutStep+1)+'/'+total;
+  document.getElementById('tut-next').textContent = tutStep===total-1 ? '✅ Começar!' : 'Próximo →';
+
+  // Navegar para a aba se necessário
+  if(s.tab && tab !== s.tab) setTab(s.tab);
+
+  // Spotlight no elemento alvo
+  setTimeout(function(){
+    posicionarSpotlight(s);
+  }, s.tab ? 300 : 50);
 }
 
-function proximoOnboard(){
-  if(onboardStep < ONBOARD_STEPS.length-1){
-    onboardStep++;
-    renderOnboardStep();
+function posicionarSpotlight(s){
+  const hole = document.getElementById('tut-hole');
+  const tooltip = document.getElementById('tut-tooltip');
+
+  if(!s.target || s.pos === 'center'){
+    // Sem spotlight — tooltip centralizado
+    hole.style.display = 'none';
+    tooltip.style.top = '50%';
+    tooltip.style.left = '50%';
+    tooltip.style.transform = 'translate(-50%,-50%)';
+    tooltip.style.bottom = '';
+    return;
+  }
+
+  const el = document.querySelector(s.target);
+  if(!el){
+    hole.style.display = 'none';
+    tooltip.style.top = '50%';
+    tooltip.style.left = '50%';
+    tooltip.style.transform = 'translate(-50%,-50%)';
+    return;
+  }
+
+  const r = el.getBoundingClientRect();
+  const pad = 8;
+  hole.style.display = 'block';
+  hole.style.left = (r.left - pad) + 'px';
+  hole.style.top = (r.top - pad) + 'px';
+  hole.style.width = (r.width + pad*2) + 'px';
+  hole.style.height = (r.height + pad*2) + 'px';
+  hole.classList.add('pulse');
+
+  // Posicionar tooltip
+  const tipW = 280;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  tooltip.style.transform = '';
+  tooltip.style.width = tipW + 'px';
+
+  // Horizontal: centralizar sobre o elemento
+  let left = r.left + r.width/2 - tipW/2;
+  if(left < 10) left = 10;
+  if(left + tipW > vw - 10) left = vw - tipW - 10;
+  tooltip.style.left = left + 'px';
+
+  // Vertical: abaixo ou acima
+  if(s.pos === 'bottom'){
+    const top = r.bottom + pad + 12;
+    tooltip.style.top = top + 'px';
+    tooltip.style.bottom = '';
   } else {
-    fecharOnboarding();
+    const bottom = vh - (r.top - pad) + 12;
+    tooltip.style.bottom = bottom + 'px';
+    tooltip.style.top = '';
   }
 }
 
-function pularOnboarding(){
-  fecharOnboarding();
+function proximoTutorial(){
+  if(tutStep < TUT_STEPS.length-1){
+    tutStep++;
+    renderTutStep();
+  } else {
+    fecharTutorial();
+  }
 }
 
-function fecharOnboarding(){
+function pularTutorial(){
+  fecharTutorial();
+}
+
+function fecharTutorial(){
   ls.set('cf_onboard_done','1');
-  document.getElementById('onboard-ovl').classList.remove('open');
+  document.getElementById('tut-overlay').classList.remove('open');
+  document.getElementById('tut-hole').style.display = 'none';
 }
 
-// ── TEMA ESCURO ───────────────────────────────────────────
+// ── TEMA ESCURO ───────────────────────────────────────────// ── TEMA ESCURO ───────────────────────────────────────────
 function toggleTema(){
   const dark=document.documentElement.classList.toggle('dark');
   ls.set('cf_tema', dark?'dark':'light');
@@ -2681,11 +2742,19 @@ init().then(function(){ verificarVencimentos(); }).catch(function(err){
   </div>
 </div>
 
-<!-- ONBOARDING -->
-<div class="onboard-ovl" id="onboard-ovl">
-  <div class="onboard-box">
-    <div class="onboard-prog" id="onboard-prog"></div>
-    <div class="onboard-slide" id="onboard-slide"></div>
+<!-- TUTORIAL INTERATIVO -->
+<div class="tut-overlay" id="tut-overlay">
+  <div class="tut-hole" id="tut-hole"></div>
+  <div class="tut-tooltip" id="tut-tooltip">
+    <div class="tut-prog" id="tut-prog"></div>
+    <div class="tut-icon" id="tut-icon"></div>
+    <div class="tut-titulo" id="tut-titulo"></div>
+    <div class="tut-desc" id="tut-desc"></div>
+    <div class="tut-btns">
+      <button class="tut-skip" onclick="pularTutorial()">Pular tutorial</button>
+      <span class="tut-step-lbl" id="tut-step-lbl"></span>
+      <button class="tut-next" id="tut-next" onclick="proximoTutorial()">Próximo →</button>
+    </div>
   </div>
 </div>
 
