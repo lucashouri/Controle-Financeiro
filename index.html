@@ -199,10 +199,9 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .cc-hero-pill-lbl{font-size:10px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;white-space:nowrap}
 .cc-hero-pill-val{font-size:13px;font-weight:700;color:#fff;word-break:break-word;line-height:1.2}
 .cc-card{background:var(--card);border-radius:14px;border:1.5px solid var(--border);margin-bottom:10px;overflow:hidden;transition:box-shadow .2s,opacity .2s}
-.cc-card.dragging{opacity:.5;box-shadow:0 8px 30px rgba(0,0,0,.3);border-color:var(--v)}
-.cc-card.drag-over{border-color:var(--v);border-style:dashed}
-.cc-drag-handle{display:flex;align-items:center;justify-content:center;width:28px;height:28px;color:var(--lb);cursor:grab;flex-shrink:0;font-size:16px;touch-action:none}
-.cc-drag-handle:active{cursor:grabbing;color:var(--v)}
+.cc-order-btns{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.cc-order-btn{background:none;border:1px solid var(--border);border-radius:5px;width:22px;height:20px;font-size:11px;cursor:pointer;color:var(--mu);display:flex;align-items:center;justify-content:center;line-height:1}
+.cc-order-btn:active{background:var(--v);color:#fff;border-color:var(--v)}
 .cc-card-mini{display:flex;align-items:center;padding:13px 15px;cursor:pointer;gap:12px;user-select:none}
 .cc-card-mini:active{opacity:.85}
 .cc-mini-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
@@ -1579,7 +1578,10 @@ function renderCartoes(){
     var fatCor=faturaMes?'var(--v)':'var(--am)';
     // Mini header clicável
     html+='<div class="cc-card-mini" onclick="handleCCMiniClick(event,\'' + ccId + '\')">';
-    html+='<div class="cc-drag-handle" title="Arrastar" onmousedown="event.stopPropagation()" ontouchstart="initDragTouch(event,\'' + cc.id + '\')" >⠿</div>';
+    html+='<div class="cc-order-btns" onclick="event.stopPropagation()">';
+    html+='<button class="cc-order-btn" onclick="moverCartao(\''+cc.id+'\',\'up\')" title="Mover para cima">▲</button>';
+    html+='<button class="cc-order-btn" onclick="moverCartao(\''+cc.id+'\',\'down\')" title="Mover para baixo">▼</button>';
+    html+='</div>';
     html+='<div class="cc-mini-icon" style="background:'+cc.cor+'22;font-size:20px">'+cc.bandeira+'</div>';
     html+='<div class="cc-mini-info">';
     html+='<div class="cc-mini-nome">'+cc.nome+'</div>';
@@ -1649,15 +1651,10 @@ function toggleCCDetails(id){
 }
 
 function handleCCMiniClick(event, id){
-  // Ignorar clique se veio de um drag
-  if(window._ccDragged) return;
   toggleCCDetails(id);
 }
 
-// ── DRAG & DROP para reordenar cartões ──────────────────────
-var _ccDragId = null;
-window._ccDragged = false;
-
+// ── REORDENAR CARTÕES ───────────────────────────────────────
 function getOrdemCC(){
   return ls.get('cf_cc_ordem', cartoes.map(function(cc){return cc.id;}));
 }
@@ -1666,107 +1663,25 @@ function salvarOrdemCC(ids){
   ls.set('cf_cc_ordem', ids);
 }
 
-function onDragStart(event, ccId){
-  _ccDragId = ccId;
-  window._ccDragged = true;
-  event.dataTransfer.effectAllowed = 'move';
-  setTimeout(function(){
-    var el = document.getElementById('cccard-'+ccId);
-    if(el) el.classList.add('dragging');
-  }, 0);
-}
-
-function onDragOver(event){
-  event.preventDefault();
-  event.dataTransfer.dropEffect = 'move';
-  var target = event.currentTarget;
-  document.querySelectorAll('.cc-card').forEach(function(el){el.classList.remove('drag-over');});
-  target.classList.add('drag-over');
-}
-
-function onDrop(event, ccId){
-  event.preventDefault();
-  if(!_ccDragId || _ccDragId === ccId) return;
+function moverCartao(ccId, dir){
   var ordem = getOrdemCC();
-  var fromIdx = ordem.indexOf(_ccDragId);
-  var toIdx = ordem.indexOf(ccId);
-  if(fromIdx === -1 || toIdx === -1){
-    ordem = cartoes.map(function(cc){return cc.id;});
-    fromIdx = ordem.indexOf(_ccDragId);
-    toIdx = ordem.indexOf(ccId);
-  }
-  ordem.splice(fromIdx, 1);
-  ordem.splice(toIdx, 0, _ccDragId);
+  if(ordem.length === 0) ordem = cartoes.map(function(cc){return cc.id;});
+  // Garantir que todos os cartões estão na ordem
+  cartoes.forEach(function(cc){if(ordem.indexOf(cc.id)===-1) ordem.push(cc.id);});
+  var idx = ordem.indexOf(ccId);
+  if(idx === -1) return;
+  if(dir === 'up' && idx > 0){
+    var tmp = ordem[idx-1]; ordem[idx-1] = ordem[idx]; ordem[idx] = tmp;
+  } else if(dir === 'down' && idx < ordem.length-1){
+    var tmp = ordem[idx+1]; ordem[idx+1] = ordem[idx]; ordem[idx] = tmp;
+  } else return;
   salvarOrdemCC(ordem);
   renderCartoes();
-}
-
-function onDragEnd(event){
-  document.querySelectorAll('.cc-card').forEach(function(el){
-    el.classList.remove('dragging','drag-over');
-  });
-  setTimeout(function(){window._ccDragged = false;}, 100);
-  _ccDragId = null;
-}
-
-// Touch drag para mobile
-var _touchDragId = null, _touchClone = null, _touchStartY = 0;
-
-function initDragTouch(event, ccId){
-  event.stopPropagation();
-  _touchDragId = ccId;
-  _touchStartY = event.touches[0].clientY;
-  var el = document.getElementById('cccard-'+ccId);
-  if(!el) return;
-  // Criar clone visual
-  _touchClone = el.cloneNode(true);
-  _touchClone.style.cssText = 'position:fixed;left:'+el.getBoundingClientRect().left+'px;top:'+el.getBoundingClientRect().top+'px;width:'+el.offsetWidth+'px;opacity:.85;z-index:999;pointer-events:none;border:2px solid var(--v);border-radius:14px;';
-  document.body.appendChild(_touchClone);
-  el.style.opacity = '.3';
-  document.addEventListener('touchmove', onTouchMove, {passive:false});
-  document.addEventListener('touchend', onTouchEnd, {passive:true});
-}
-
-function onTouchMove(event){
-  if(!_touchDragId||!_touchClone) return;
-  event.preventDefault();
-  var t = event.touches[0];
-  var dy = t.clientY - _touchStartY;
-  _touchClone.style.top = (parseFloat(_touchClone.style.top) + dy) + 'px';
-  _touchStartY = t.clientY;
-  // Detectar sobre qual cartão está
-  _touchClone.style.display = 'none';
-  var elemBelow = document.elementFromPoint(t.clientX, t.clientY);
-  _touchClone.style.display = '';
-  var targetCard = elemBelow ? elemBelow.closest('.cc-card') : null;
-  document.querySelectorAll('.cc-card').forEach(function(el){el.classList.remove('drag-over');});
-  if(targetCard && targetCard.id !== 'cccard-'+_touchDragId) targetCard.classList.add('drag-over');
-}
-
-function onTouchEnd(event){
-  document.removeEventListener('touchmove', onTouchMove);
-  document.removeEventListener('touchend', onTouchEnd);
-  if(_touchClone) _touchClone.remove();
-  _touchClone = null;
-  var el = document.getElementById('cccard-'+_touchDragId);
-  if(el) el.style.opacity = '';
-  // Encontrar o cartão alvo
-  var targetCard = document.querySelector('.cc-card.drag-over');
-  document.querySelectorAll('.cc-card').forEach(function(e){e.classList.remove('drag-over');});
-  if(targetCard && targetCard.id !== 'cccard-'+_touchDragId){
-    var targetId = targetCard.id.replace('cccard-','');
-    var ordem = getOrdemCC();
-    if(ordem.length === 0) ordem = cartoes.map(function(cc){return cc.id;});
-    var fromIdx = ordem.indexOf(_touchDragId);
-    var toIdx = ordem.indexOf(targetId);
-    if(fromIdx !== -1 && toIdx !== -1){
-      ordem.splice(fromIdx,1);
-      ordem.splice(toIdx,0,_touchDragId);
-      salvarOrdemCC(ordem);
-      renderCartoes();
-    }
-  }
-  _touchDragId = null;
+  // Manter o card aberto após reordenar
+  setTimeout(function(){
+    var det = document.getElementById('cc-det-'+ccId);
+    var detWasOpen = det && det.classList.contains('open');
+  },10);
 }
 
 function abrirModalCartao(id){
