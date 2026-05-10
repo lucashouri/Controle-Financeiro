@@ -1585,7 +1585,9 @@ function renderCartoes(){
     var fatLabel=faturaMes?'✅ Paga':'⚠️ Em aberto';
     var fatCor=faturaMes?'var(--v)':'var(--am)';
     // Mini header clicável
-    html+='<div class="cc-mini-header" style="background:'+cc.cor+';border-radius:12px 12px 0 0" onclick="handleCCMiniClick(event,\'' + ccId + '\')">';
+    html+='<div class="cc-mini-header" style="background:'+cc.cor+';border-radius:12px 12px 0 0;position:relative;overflow:hidden" onclick="handleCCMiniClick(event,\'' + ccId + '\')">';
+    html+='<div style="position:absolute;inset:0;background:rgba(0,0,0,.35);pointer-events:none"></div>';
+    html+='<div style="position:relative;z-index:1;display:flex;align-items:center;gap:10px;width:100%">';
     html+='<div class="cc-order-btns'+((_reordenando)?' visible':'')+'" onclick="event.stopPropagation()" id="ob-'+cc.id+'">';
     html+='<button class="cc-order-btn" onclick="moverCartao(\''+cc.id+'\',\'up\')" title="Mover para cima">▲</button>';
     html+='<button class="cc-order-btn" onclick="moverCartao(\''+cc.id+'\',\'down\')" title="Mover para baixo">▼</button>';
@@ -1601,7 +1603,7 @@ function renderCartoes(){
     html+='<span class="cc-mini-chevron" id="chev-' + ccId + '">›</span>';
     html+='</div></div>';
     // Barra de progresso mini
-    html+='<div style="height:3px;background:var(--border)"><div style="height:100%;width:'+pct.toFixed(0)+'%;background:'+corProgresso(pct)+';transition:width .4s"></div></div>';
+    html+='<div style="height:3px;background:rgba(0,0,0,.15)"><div style="height:100%;width:'+pct.toFixed(0)+'%;background:rgba(255,255,255,.5);transition:width .4s"></div></div>';
     // Detalhes expansíveis
     html+='<div class="cc-details" id="'+ccId+'">';
     html+='<div class="cc-card-header"><div class="cc-card-icon" style="background:'+cc.cor+'22">'+cc.bandeira+'</div><div class="cc-card-info"><div class="cc-card-nome">'+cc.nome+'</div><div class="cc-card-limite">Limite: '+brl(cc.limite)+' · Disponível: <span style="color:'+dispCor+'">'+brl(disp)+'</span></div></div><div class="cc-card-actions"><button class="cc-card-btn" onclick="abrirModalCartao(\''+cc.id+'\')" title="Editar">✏️</button><button class="cc-card-btn" style="color:#ccc" onclick="removerCartao(\''+cc.id+'\')">🗑️</button></div></div>';
