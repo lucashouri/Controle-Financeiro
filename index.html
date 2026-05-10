@@ -1585,9 +1585,11 @@ function renderCartoes(){
     var fatLabel=faturaMes?'✅ Paga':'⚠️ Em aberto';
     var fatCor=faturaMes?'var(--v)':'var(--am)';
     // Mini header clicável
-    html+='<div class="cc-mini-header" style="background:'+cc.cor+';border-radius:12px 12px 0 0;position:relative;overflow:hidden" onclick="handleCCMiniClick(event,\'' + ccId + '\')">';
-    html+='<div style="position:absolute;inset:0;background:rgba(0,0,0,.35);pointer-events:none"></div>';
-    html+='<div style="position:relative;z-index:1;display:flex;align-items:center;gap:10px;width:100%">';
+    // Escurecer a cor do cartão para melhor legibilidade
+    var hexToRgb=function(hex){hex=hex.replace('#','');if(hex.length===3)hex=hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];var n=parseInt(hex,16);return{r:(n>>16)&255,g:(n>>8)&255,b:n&255};};
+    var rgb=hexToRgb(cc.cor||'#6366F1');
+    var bgColor='rgba('+Math.max(0,rgb.r-60)+','+Math.max(0,rgb.g-60)+','+Math.max(0,rgb.b-60)+',1)';
+    html+='<div class="cc-mini-header" style="background:'+bgColor+';border-radius:12px 12px 0 0" onclick="handleCCMiniClick(event,\'' + ccId + '\')">';
     html+='<div class="cc-order-btns'+((_reordenando)?' visible':'')+'" onclick="event.stopPropagation()" id="ob-'+cc.id+'">';
     html+='<button class="cc-order-btn" onclick="moverCartao(\''+cc.id+'\',\'up\')" title="Mover para cima">▲</button>';
     html+='<button class="cc-order-btn" onclick="moverCartao(\''+cc.id+'\',\'down\')" title="Mover para baixo">▼</button>';
