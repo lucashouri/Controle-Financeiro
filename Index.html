@@ -2136,8 +2136,12 @@ function abrirEdicao(id){
   document.getElementById('efo').value=t.obs||'';
   document.getElementById('eferr').style.display='none';
   setTipoEdit(t.tipo||'Gasto');
-  document.getElementById('efc').value=t.categoria||'';
-  setTimeout(()=>{ if(!document.getElementById('efc').value) document.getElementById('efc').value=t.categoria||''; },150);
+  var _cat=t.categoria||'';
+  document.getElementById('efc').value=_cat;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    document.getElementById('efc').value=_cat;
+  }));
+  setTimeout(()=>{ document.getElementById('efc').value=_cat; },200);
   document.getElementById('ovl-e').classList.add('open');
   setTimeout(()=>document.getElementById('efd').focus(),120);
 }
