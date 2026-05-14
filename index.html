@@ -2136,7 +2136,8 @@ function abrirEdicao(id){
   document.getElementById('efo').value=t.obs||'';
   document.getElementById('eferr').style.display='none';
   setTipoEdit(t.tipo||'Gasto');
-  setTimeout(()=>document.getElementById('efc').value=t.categoria||'',50);
+  document.getElementById('efc').value=t.categoria||'';
+  setTimeout(()=>{ if(!document.getElementById('efc').value) document.getElementById('efc').value=t.categoria||''; },150);
   document.getElementById('ovl-e').classList.add('open');
   setTimeout(()=>document.getElementById('efd').focus(),120);
 }
