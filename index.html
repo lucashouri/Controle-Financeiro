@@ -299,6 +299,9 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .cc-mini-header .cc-mini-nome{color:#fff}
 .cc-mini-header .cc-mini-sub{color:rgba(255,255,255,.75)}
 .cc-mini-header .cc-mini-valor{color:#fff}
+/* Caixinhas colapsáveis */
+.cai-mini-hdr{display:flex;align-items:center;justify-content:space-between;padding:17px 15px 13px;cursor:pointer;user-select:none;gap:10px}
+.cai-mini-hdr:active{opacity:.85}
 /* Recorrentes redesenhados */
 .rec-group-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 4px;margin-bottom:6px;margin-top:12px}
 .rec-group-hdr:first-child{margin-top:0}
@@ -659,6 +662,13 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
           <div style="font-size:12px;color:var(--mu)">Aviso quando fatura está próxima do vencimento</div>
         </div>
         <button onclick="toggleNotifVenc()" id="btn-notif-venc" class="cfg-btn">🔔 Ativar</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--bg)">
+        <div>
+          <div style="font-size:13px;font-weight:600">🔁 Alertas de Recorrentes</div>
+          <div style="font-size:12px;color:var(--mu)">Aviso quando recorrente está próximo do vencimento</div>
+        </div>
+        <button onclick="toggleNotifRec()" id="btn-notif-rec" class="cfg-btn">🔁 Ativar</button>
       </div>
     </div>
     <div class="stcard">
@@ -1296,9 +1306,10 @@ function renderResumo(){
   const alertaRecEl=document.getElementById('resumo-rec-alerta');
   if(alertaRecEl){
     const hoje2=new Date();
-    if(mes===hoje2.getMonth()&&ano===hoje2.getFullYear()){
+    if(mes===hoje2.getMonth()&&ano===hoje2.getFullYear()&&ls.get('cf_notif_rec','on')==='on'){
       const lançadosMesR=dm.filter(t=>t.obs==='Recorrente').map(t=>t.desc);
-      const pendR=recorrentes.filter(r=>r.ativo&&!lançadosMesR.includes(r.nome));
+      const hojeDia=hoje2.getDate();
+      const pendR=recorrentes.filter(r=>r.ativo&&!lançadosMesR.includes(r.nome)&&r.dia<=hojeDia+5);
       if(pendR.length){
         alertaRecEl.innerHTML='<div class="rec-alerta-resumo" onclick="irParaAba(\'recorrentes\')"><span style="font-size:18px">🔁</span><div class="rec-alerta-resumo-txt">'+pendR.length+' recorrente'+(pendR.length>1?'s':'')+' pendente'+(pendR.length>1?'s':'')+' — toque para lançar</div><span style="font-size:14px;color:var(--am)">›</span></div>';
       }else{alertaRecEl.innerHTML='';}
@@ -2179,8 +2190,12 @@ function renderRecorrentes(){
   // Alerta
   const alertBloco=document.getElementById('rec-alerta-bloco');
   if(alertBloco){
-    if(pendentes.length&&mes===new Date().getMonth()&&ano===new Date().getFullYear()){
-      alertBloco.innerHTML='<div style="background:var(--aml);border:1px solid var(--am);border-radius:10px;padding:10px 13px;margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">⚠️</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--am)">'+pendentes.length+' recorrente'+(pendentes.length>1?'s':'')+' pendente'+(pendentes.length>1?'s':'')+' este mês</div><div style="font-size:11px;color:var(--am);opacity:.8">Toque em Lançar tudo para registrar</div></div><button onclick="lancarRecorrentes()" style="padding:6px 12px;background:var(--am);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">🚀 Lançar</button></div>';
+    if(pendentes.length&&mes===new Date().getMonth()&&ano===new Date().getFullYear()&&ls.get('cf_notif_rec','on')==='on'){
+      const hojeDia=new Date().getDate();
+      const urgentes=pendentes.filter(r=>r.dia<=hojeDia+5);
+      if(urgentes.length){
+        alertBloco.innerHTML='<div style="background:var(--aml);border:1px solid var(--am);border-radius:10px;padding:10px 13px;margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">⚠️</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--am)">'+urgentes.length+' recorrente'+(urgentes.length>1?'s':'')+' vence'+(urgentes.length>1?'m':'')+' em breve</div><div style="font-size:11px;color:var(--am);opacity:.8">'+urgentes.map(r=>'Dia '+r.dia+': '+r.nome).join(' · ')+'</div></div><button onclick="lancarRecorrentes()" style="padding:6px 12px;background:var(--am);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">🚀 Lançar</button></div>';
+      }else{alertBloco.innerHTML='';}
     }else{alertBloco.innerHTML='';}
   }
 
@@ -3012,8 +3027,28 @@ function atualizarBtnNotif(){
   btn.style.color = '#F1F5F9';
 }
 
+function toggleNotifRec(){
+  const atual=ls.get('cf_notif_rec','on');
+  const novo=atual==='on'?'off':'on';
+  ls.set('cf_notif_rec',novo);
+  atualizarBtnNotifRec();
+  badge(novo==='on'?'🔁 Alertas de recorrentes ativados':'🔕 Alertas de recorrentes desativados',novo==='on'?'ok':'err');
+  renderRecorrentes();
+  renderResumo();
+}
+
+function atualizarBtnNotifRec(){
+  const ativo=ls.get('cf_notif_rec','on')==='on';
+  const btn=document.getElementById('btn-notif-rec');
+  if(!btn)return;
+  btn.textContent=ativo?'🔁 Ativado':'🔕 Desativado';
+  btn.style.background=ativo?'#475569':'#DC2626';
+  btn.style.color='#F1F5F9';
+}
+
 function initNotifBtn(){
   atualizarBtnNotif();
+  atualizarBtnNotifRec();
 }
 
 async function pedirPermissaoNotificacao(){
