@@ -551,6 +551,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{position:absolute;inset:0;
   <!-- RESUMO -->
   <div id="tab-resumo">
     <div id="dash-hero-block"></div>
+    <div id="resumo-venc-alerta"></div>
     <div id="resumo-rec-alerta"></div>
     <div class="slbl" id="la"></div>
     <div class="ano-grid">
@@ -565,6 +566,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{position:absolute;inset:0;
   <!-- CARTÕES -->
   <div id="tab-cartoes" style="display:none">
     <div id="cc-hero-block"></div>
+    <div id="cartoes-venc-alerta"></div>
     <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
       <button class="cc-reorder-toggle" id="cc-reorder-btn" onclick="toggleReordenar()">⇅ Reordenar</button>
     </div>
@@ -1314,6 +1316,7 @@ function renderResumo(){
   document.getElementById('ga').textContent=brl(gastA);
   document.getElementById('gda').textContent=brl(totalInvestimentos);
   document.getElementById('rempty').style.display=dm.length?'none':'';
+  renderAlertaVencResmo();
   // Alerta recorrentes pendentes no mês atual
   const alertaRecEl=document.getElementById('resumo-rec-alerta');
   if(alertaRecEl){
@@ -1720,6 +1723,7 @@ function renderCartoes(){
   const totalDispReal=cartoes.reduce((s,cc)=>s+(cc.limite-gastoEmAberto(cc)),0);
   let hero='<div class="cc-hero"><div class="cc-hero-lbl">Gastos em '+MESES[mes]+'</div><div class="cc-hero-val">'+brl(totalGastoMes)+'</div><div class="cc-hero-sub">de '+brl(totalLimite)+' em limites</div><div class="cc-hero-pills"><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Limite total</div><div class="cc-hero-pill-val">'+brl(totalLimite)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Disponível real</div><div class="cc-hero-pill-val" style="color:'+(totalDispReal>=0?'#86EFAC':'#FCA5A5')+'">'+brl(totalDispReal)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Cartões</div><div class="cc-hero-pill-val">'+cartoes.length+'</div></div></div></div>';
   document.getElementById('cc-hero-block').innerHTML=hero;
+  renderAlertaVencCartoes();
   renderParcelasBlock();
   let html='';
   // Aplicar ordem salva
@@ -2998,61 +3002,73 @@ function initTema(){
 }
 
 // ── NOTIFICAÇÕES DE VENCIMENTO ────────────────────────────
-function verificarVencimentos(){
-  if(ls.get('cf_notif_venc','on') === 'off') return;
+// ── ALERTAS DE VENCIMENTO (in-app, sem API nativa) ────────
+function getAlertasVencimento(){
+  if(ls.get('cf_notif_venc','on')==='off')return[];
   const hoje=new Date();
   const diaHoje=hoje.getDate();
   const alertas=[];
   cartoes.forEach(function(cc){
     const venc=cc.diaVenc||10;
     const diasRestantes=venc-diaHoje;
-    const gastosAbertos=faturaVencAtual(cc);
-    if(gastosAbertos>0&&diasRestantes>=0&&diasRestantes<=3){
-      const msg=diasRestantes===0
-        ?'🔔 '+cc.nome+' vence HOJE! '+brl(gastosAbertos)
-        :'🔔 '+cc.nome+' vence em '+diasRestantes+' dia'+(diasRestantes>1?'s':'')+'! '+brl(gastosAbertos);
-      alertas.push(msg);
+    const valor=faturaVencAtual(cc);
+    if(valor>0&&diasRestantes>=0&&diasRestantes<=3){
+      alertas.push({nome:cc.nome,diasRestantes,valor,id:cc.id});
     }
   });
-  if(alertas.length===0)return;
-  // Mostrar alerta visual fixo no topo do app
-  const existing=document.getElementById('venc-alert');
-  if(existing)existing.remove();
-  const div=document.createElement('div');
-  div.id='venc-alert';
-  div.style.cssText='position:fixed;top:0;left:0;right:0;z-index:200;background:#DC2626;color:#fff;padding:10px 16px;font-size:13px;font-weight:600;display:flex;flex-direction:column;gap:4px;box-shadow:0 4px 12px rgba(0,0,0,.3)';
-  alertas.forEach(function(msg){
-    const p=document.createElement('div');
-    p.textContent=msg;
-    div.appendChild(p);
+  return alertas;
+}
+
+function renderAlertaVencResmo(){
+  const el=document.getElementById('resumo-venc-alerta');
+  if(!el)return;
+  const alertas=getAlertasVencimento();
+  if(!alertas.length){el.innerHTML='';return;}
+  let h='';
+  alertas.forEach(function(a){
+    const txt=a.diasRestantes===0?'vence HOJE':'vence em '+a.diasRestantes+' dia'+(a.diasRestantes>1?'s':'');
+    h+='<div style="background:var(--rl);border:1px solid var(--r);border-radius:10px;padding:10px 13px;margin-bottom:8px;display:flex;align-items:center;gap:8px" onclick="irParaAba(\'cartoes\')" style="cursor:pointer">';
+    h+='<span style="font-size:18px">🔔</span>';
+    h+='<div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--r)">'+a.nome+' '+txt+'</div>';
+    h+='<div style="font-size:11px;color:var(--r);opacity:.85">Fatura: '+brl(a.valor)+'</div></div>';
+    h+='<span style="font-size:14px;color:var(--r)">›</span></div>';
   });
-  const close=document.createElement('button');
-  close.textContent='✕ Fechar';
-  close.style.cssText='background:none;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;margin-top:4px;align-self:flex-end';
-  close.onclick=function(){div.remove();};
-  div.appendChild(close);
-  document.body.appendChild(div);
-  // Tentar notificação nativa também
-  if('Notification' in window&&Notification.permission==='granted'){
-    alertas.forEach(function(msg){new Notification('Controle Financeiro',{body:msg,icon:'/icon.svg'});});
-  }
+  el.innerHTML=h;
+}
+
+function renderAlertaVencCartoes(){
+  const el=document.getElementById('cartoes-venc-alerta');
+  if(!el)return;
+  const alertas=getAlertasVencimento();
+  if(!alertas.length){el.innerHTML='';return;}
+  let h='';
+  alertas.forEach(function(a){
+    const txt=a.diasRestantes===0?'vence HOJE! Pague agora':'vence em '+a.diasRestantes+' dia'+(a.diasRestantes>1?'s':'');
+    h+='<div style="background:var(--rl);border:1px solid var(--r);border-radius:10px;padding:10px 13px;margin-bottom:8px;display:flex;align-items:center;gap:8px">';
+    h+='<span style="font-size:18px">🔔</span>';
+    h+='<div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--r)">'+a.nome+' '+txt+'</div>';
+    h+='<div style="font-size:11px;color:var(--r);opacity:.85">Fatura em aberto: '+brl(a.valor)+'</div></div></div>';
+  });
+  el.innerHTML=h;
 }
 
 function toggleNotifVenc(){
-  const atual = ls.get('cf_notif_venc', 'on');
-  const novo = atual === 'on' ? 'off' : 'on';
-  ls.set('cf_notif_venc', novo);
+  const atual=ls.get('cf_notif_venc','on');
+  const novo=atual==='on'?'off':'on';
+  ls.set('cf_notif_venc',novo);
   atualizarBtnNotif();
-  badge(novo === 'on' ? '🔔 Alertas ativados' : '🔕 Alertas desativados', novo === 'on' ? 'ok' : 'err');
+  badge(novo==='on'?'🔔 Alertas de vencimento ativados':'🔕 Alertas de vencimento desativados',novo==='on'?'ok':'err');
+  renderAlertaVencResmo();
+  renderAlertaVencCartoes();
 }
 
 function atualizarBtnNotif(){
-  const ativo = ls.get('cf_notif_venc','on') === 'on';
-  const btn = document.getElementById('btn-notif-venc');
-  if(!btn) return;
-  btn.textContent = ativo ? '🔔 Ativado' : '🔕 Desativado';
-  btn.style.background = ativo ? '#475569' : '#DC2626';
-  btn.style.color = '#F1F5F9';
+  const ativo=ls.get('cf_notif_venc','on')==='on';
+  const btn=document.getElementById('btn-notif-venc');
+  if(!btn)return;
+  btn.textContent=ativo?'🔔 Ativado':'🔕 Desativado';
+  btn.style.background=ativo?'#475569':'#DC2626';
+  btn.style.color='#F1F5F9';
 }
 
 function toggleNotifRec(){
@@ -3077,17 +3093,6 @@ function atualizarBtnNotifRec(){
 function initNotifBtn(){
   atualizarBtnNotif();
   atualizarBtnNotifRec();
-}
-
-async function pedirPermissaoNotificacao(){
-  if(!('Notification' in window)){badge('Notificações não suportadas neste navegador','err');return;}
-  const perm=await Notification.requestPermission();
-  if(perm==='granted'){
-    badge('✅ Notificações ativadas!','ok');
-    ls.set('cf_notif','on');
-  }else{
-    badge('❌ Permissão negada. Ative nas configurações do navegador.','err');
-  }
 }
 
 // ── BOTÃO VOLTAR ANDROID ──────────────────────────────────
@@ -3345,7 +3350,7 @@ setTimeout(function(){
   }
 }, 8000);
 buscarCDI(); // busca em paralelo
-init().then(function(){ verificarVencimentos(); }).catch(function(err){
+init().then(function(){ }).catch(function(err){
   console.error('Erro no init:', err);
   esconderSplash();
   document.getElementById('auth-screen').style.display='flex';
