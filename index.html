@@ -749,6 +749,8 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
         </div>
       </div>
     </div>
+    <button type="button" id="cc-personalizar-btn" onclick="togglePersonalizar()" style="width:100%;padding:8px;border:1px dashed var(--border);background:none;border-radius:9px;font-size:12px;color:var(--mu);cursor:pointer;margin-bottom:12px">✏️ Personalizar ícone e cor</button>
+    <div id="cc-personalizar-wrap" style="display:none">
     <div class="fld"><label>Emoji</label>
       <div class="emoji-picker">
         <button class="emoji-opt" onclick="setEmoji('cc-band','💳')">💳</button>
@@ -782,6 +784,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
         <div class="color-preview" id="cc-cor-preview" style="background:#8B5CF6"></div>
         <span style="font-size:12px;color:var(--mu)" id="cc-cor-label">Roxo selecionado</span>
       </div>
+    </div>
     </div>
     <div class="gf">
       <div class="fld"><label>Limite (R$)</label><input id="cc-limite" type="number" placeholder="0,00" min="0" step="0.01"/></div>
@@ -1761,6 +1764,11 @@ function abrirModalCartao(id){
   });
   document.getElementById('cc-venc').value=cc?.diaVenc||10;
   document.getElementById('cc-modal-err').style.display='none';
+  // Resetar painel personalizar
+  var wrap=document.getElementById('cc-personalizar-wrap');
+  var btn=document.getElementById('cc-personalizar-btn');
+  if(wrap)wrap.style.display='none';
+  if(btn){btn.style.display='';btn.textContent='✏️ Personalizar ícone e cor';}
   document.getElementById('ovl-cc').classList.add('open');
   setTimeout(()=>{document.getElementById('cc-nome').focus();onCCNomeInput(cc?.nome||'');},120);
 }
@@ -1853,8 +1861,18 @@ async function salvarGasto(){
 }
 
 async function removerGasto(cartaoId,gastoId){
-  if(!confirm('Remover este gasto?'))return;
-  await supa.from('gastos_cartao').delete().eq('id',gastoId);
+  const cc=cartoes.find(x=>x.id===cartaoId);
+  const g=cc?.gastos.find(x=>x.id===gastoId);
+  if(g?.grupoId&&g?.totalParcelas>1){
+    const restantes=cc.gastos.filter(x=>x.grupoId===g.grupoId);
+    const pagas=restantes.filter(x=>{const d=td(x.data);return faturasPagas.some(f=>f.cartao_id===cartaoId&&f.mes===d.getMonth()&&f.ano===d.getFullYear());}).length;
+    if(!confirm('Este é um parcelamento: "'+g.desc+'" ('+g.parcela+'/'+g.totalParcelas+' parcelas).\n\nTodas as '+restantes.length+' parcelas serão removidas.\n\nDeseja continuar?'))return;
+    const ids=restantes.map(x=>x.id);
+    await supa.from('gastos_cartao').delete().in('id',ids);
+  }else{
+    if(!confirm('Remover este gasto?'))return;
+    await supa.from('gastos_cartao').delete().eq('id',gastoId);
+  }
   await carregarTudo();renderCartoes();badge('Gasto removido','ok');
 }
 
@@ -2405,19 +2423,41 @@ function iconCartao(cc){
   return '<span style="font-size:22px">'+(cc.bandeira||'💳')+'</span>';
 }
 
+function togglePersonalizar(){
+  var wrap=document.getElementById('cc-personalizar-wrap');
+  var btn=document.getElementById('cc-personalizar-btn');
+  if(!wrap)return;
+  var open=wrap.style.display==='none';
+  wrap.style.display=open?'':'none';
+  if(btn)btn.textContent=open?'▲ Ocultar personalização':'✏️ Personalizar ícone e cor';
+}
+
 function onCCNomeInput(val){
   var b=detectarBanco(val);
   var det=document.getElementById('cc-banco-detect');
   var logo=document.getElementById('cc-banco-det-logo');
   var nomeDet=document.getElementById('cc-banco-det-nome');
+  var wrap=document.getElementById('cc-personalizar-wrap');
+  var btn=document.getElementById('cc-personalizar-btn');
   if(!det)return;
   if(b){
     if(logo){logo.src='https://www.google.com/s2/favicons?domain='+b.domain+'&sz=64';logo.style.opacity='1';}
     if(nomeDet)nomeDet.textContent=b.nome+' detectado';
     det.classList.add('show');
+    // Esconder personalização quando banco detectado
+    if(wrap)wrap.style.display='none';
+    if(btn){btn.textContent='✏️ Personalizar ícone e cor';btn.style.display='';}
     setCorCartao(b.cor);
   }else{
     det.classList.remove('show');
+    // Mostrar personalização quando banco não detectado e há texto
+    if(val.trim().length>0){
+      if(wrap)wrap.style.display='';
+      if(btn)btn.style.display='none';
+    }else{
+      if(wrap)wrap.style.display='none';
+      if(btn){btn.style.display='';btn.textContent='✏️ Personalizar ícone e cor';}
+    }
   }
 }
 
