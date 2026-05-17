@@ -291,6 +291,36 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .cdi-row-val{font-size:13px;font-weight:700}
 .cc-venc{font-size:11px;color:var(--mu);margin-top:2px}
 .cc-tipo-btn.on-parc{background:var(--az);color:#fff}
+/* Logos de banco */
+.cc-bank-logo{width:30px;height:30px;border-radius:8px;object-fit:contain;flex-shrink:0;display:block}
+.cc-icon-wrap{display:flex;align-items:center;justify-content:center;width:36px;height:36px;flex-shrink:0}
+.dark .cc-bank-logo{background:rgba(255,255,255,.08);padding:3px}
+/* Seção de parcelamentos */
+.parc-section{background:var(--card);border-radius:14px;border:1px solid var(--border);margin-bottom:12px;overflow:hidden}
+.parc-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 15px;cursor:pointer;user-select:none}
+.parc-hdr:active{opacity:.8}
+.parc-hdr-left{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--tx)}
+.parc-count{background:var(--azl);color:var(--az);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+.parc-chev{font-size:16px;color:var(--mu);transition:transform .25s;line-height:1}
+.parc-chev.open{transform:rotate(90deg)}
+.parc-body{border-top:1px solid var(--bg)}
+.parc-item{padding:12px 15px;border-bottom:1px solid var(--bg)}
+.parc-item:last-child{border-bottom:none}
+.parc-item-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:10px}
+.parc-item-left{flex:1;min-width:0}
+.parc-desc{font-size:14px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.parc-meta{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mu)}
+.parc-item-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}
+.parc-parcela{font-size:13px;font-weight:800;color:var(--az)}
+.parc-val{font-size:11px;color:var(--mu)}
+.parc-bar-track{height:5px;background:var(--bg);border-radius:3px;overflow:hidden;margin-bottom:7px}
+.parc-bar-fill{height:5px;border-radius:3px;background:linear-gradient(90deg,var(--az),#60A5FA);transition:width .4s}
+.parc-footer{display:flex;justify-content:space-between;align-items:center;gap:4px;flex-wrap:wrap}
+/* Detecção de banco no modal */
+.cc-banco-det{display:none;margin-top:8px;padding:10px 12px;background:var(--azl);border-radius:10px;border:1px solid rgba(37,99,235,.2);align-items:center;gap:10px}
+.cc-banco-det.show{display:flex}
+.cc-banco-det-logo{width:32px;height:32px;border-radius:8px;object-fit:contain;flex-shrink:0;background:rgba(255,255,255,.6)}
+.dark .cc-banco-det{background:rgba(37,99,235,.12);border-color:rgba(37,99,235,.3)}
 .dash-hero{border-radius:20px;padding:22px 20px 20px;margin-bottom:16px;position:relative;overflow:hidden;background:linear-gradient(135deg,#0F172A 0%,#1E3A5F 50%,#1E40AF 100%)}
 .dash-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.04)}
 .dash-hero::after{content:'';position:absolute;bottom:-60px;left:-20px;width:200px;height:200px;border-radius:50%;background:rgba(99,179,237,.06)}
@@ -497,6 +527,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
     <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
       <button class="cc-reorder-toggle" id="cc-reorder-btn" onclick="toggleReordenar()">⇅ Reordenar</button>
     </div>
+    <div id="cc-parcelas-block"></div>
     <div id="cc-lista"></div>
     <div class="cc-novo-card" onclick="abrirModalCartao()">
       <div style="font-size:28px;margin-bottom:4px">➕</div>
@@ -709,7 +740,15 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 <div class="ovl" id="ovl-cc" onclick="fecharSe(event,'ovl-cc')">
   <div class="mdl" style="max-width:400px">
     <div class="mhdr"><span class="mtit" id="cc-modal-titulo">Novo cartão</span><button class="mcls" onclick="fecharModal('ovl-cc')">×</button></div>
-    <div class="fld"><label>Nome</label><input id="cc-nome" type="text" placeholder="Ex: Nubank, Inter..."/></div>
+    <div class="fld"><label>Nome</label><input id="cc-nome" type="text" placeholder="Ex: Nubank, Inter..." oninput="onCCNomeInput(this.value)"/>
+      <div class="cc-banco-det" id="cc-banco-detect">
+        <img class="cc-banco-det-logo" id="cc-banco-det-logo" src="" alt="logo" onerror="this.style.opacity='0'"/>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:700;color:var(--az)" id="cc-banco-det-nome"></div>
+          <div style="font-size:11px;color:var(--mu)">Cor aplicada automaticamente ✓</div>
+        </div>
+      </div>
+    </div>
     <div class="fld"><label>Emoji</label>
       <div class="emoji-picker">
         <button class="emoji-opt" onclick="setEmoji('cc-band','💳')">💳</button>
@@ -1555,6 +1594,7 @@ function renderCartoes(){
   const totalDispReal=cartoes.reduce((s,cc)=>s+(cc.limite-gastoEmAberto(cc)),0);
   let hero='<div class="cc-hero"><div class="cc-hero-lbl">Gastos em '+MESES[mes]+'</div><div class="cc-hero-val">'+brl(totalGastoMes)+'</div><div class="cc-hero-sub">de '+brl(totalLimite)+' em limites</div><div class="cc-hero-pills"><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Limite total</div><div class="cc-hero-pill-val">'+brl(totalLimite)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Disponível real</div><div class="cc-hero-pill-val" style="color:'+(totalDispReal>=0?'#86EFAC':'#FCA5A5')+'">'+brl(totalDispReal)+'</div></div><div class="cc-hero-pill"><div class="cc-hero-pill-lbl">Cartões</div><div class="cc-hero-pill-val">'+cartoes.length+'</div></div></div></div>';
   document.getElementById('cc-hero-block').innerHTML=hero;
+  renderParcelasBlock();
   let html='';
   // Aplicar ordem salva
   var ordemSalva = getOrdemCC();
@@ -1594,7 +1634,7 @@ function renderCartoes(){
     html+='<button class="cc-order-btn" onclick="moverCartao(\''+cc.id+'\',\'up\')" title="Mover para cima">▲</button>';
     html+='<button class="cc-order-btn" onclick="moverCartao(\''+cc.id+'\',\'down\')" title="Mover para baixo">▼</button>';
     html+='</div>';
-    html+='<div style="font-size:22px">'+cc.bandeira+'</div>';
+    html+='<div class="cc-icon-wrap">'+iconCartao(cc)+'</div>';
     html+='<div class="cc-mini-info">';
     html+='<div class="cc-mini-nome">'+cc.nome+'</div>';
     html+='<div class="cc-mini-sub">'+brl(gastoMesCard)+' de '+brl(cc.limite)+(cc.diaVenc?' · vence dia '+cc.diaVenc:'')+'</div>';
@@ -1608,7 +1648,7 @@ function renderCartoes(){
     html+='<div style="height:3px;background:rgba(0,0,0,.15)"><div style="height:100%;width:'+pct.toFixed(0)+'%;background:rgba(255,255,255,.5);transition:width .4s"></div></div>';
     // Detalhes expansíveis
     html+='<div class="cc-details" id="'+ccId+'">';
-    html+='<div class="cc-card-header"><div class="cc-card-icon" style="background:'+cc.cor+'22">'+cc.bandeira+'</div><div class="cc-card-info"><div class="cc-card-nome">'+cc.nome+'</div><div class="cc-card-limite">Limite: '+brl(cc.limite)+' · Disponível: <span style="color:'+dispCor+'">'+brl(disp)+'</span></div></div><div class="cc-card-actions"><button class="cc-card-btn" onclick="abrirModalCartao(\''+cc.id+'\')" title="Editar">✏️</button><button class="cc-card-btn" style="color:#ccc" onclick="removerCartao(\''+cc.id+'\')">🗑️</button></div></div>';
+    html+='<div class="cc-card-header"><div class="cc-card-icon" style="background:'+cc.cor+'22">'+iconCartao(cc)+'</div><div class="cc-card-info"><div class="cc-card-nome">'+cc.nome+'</div><div class="cc-card-limite">Limite: '+brl(cc.limite)+' · Disponível: <span style="color:'+dispCor+'">'+brl(disp)+'</span></div></div><div class="cc-card-actions"><button class="cc-card-btn" onclick="abrirModalCartao(\''+cc.id+'\')" title="Editar">✏️</button><button class="cc-card-btn" style="color:#ccc" onclick="removerCartao(\''+cc.id+'\')">🗑️</button></div></div>';
     html+='<div class="cc-progress-wrap"><div class="cc-progress-top"><span class="cc-progress-gasto" style="color:'+cor+'">'+brl(gastoMesCard)+'</span><span class="cc-progress-pct" style="background:'+cor+'22;color:'+cor+'">'+pct.toFixed(0)+'%</span></div><div class="cc-progress-track"><div class="cc-progress-fill" style="width:'+pct+'%;background:'+cor+'"></div></div><div class="cc-progress-labels"><span class="cc-progress-lbl">R$ 0</span><span class="cc-progress-lbl">Limite: '+brl(cc.limite)+'</span></div></div>';
     if(gastosMes.length){
       html+='<div class="cc-gastos-lista"><div style="font-size:11px;color:var(--lb);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Gastos em '+MESES[mes]+'</div>';
@@ -1722,7 +1762,7 @@ function abrirModalCartao(id){
   document.getElementById('cc-venc').value=cc?.diaVenc||10;
   document.getElementById('cc-modal-err').style.display='none';
   document.getElementById('ovl-cc').classList.add('open');
-  setTimeout(()=>document.getElementById('cc-nome').focus(),120);
+  setTimeout(()=>{document.getElementById('cc-nome').focus();onCCNomeInput(cc?.nome||'');},120);
 }
 
 async function salvarCartao(){
@@ -2136,8 +2176,12 @@ function abrirEdicao(id){
   document.getElementById('efo').value=t.obs||'';
   document.getElementById('eferr').style.display='none';
   setTipoEdit(t.tipo||'Gasto');
-  document.getElementById('efc').value=t.categoria||'';
-  setTimeout(()=>{ if(!document.getElementById('efc').value) document.getElementById('efc').value=t.categoria||''; },150);
+  var _cat=t.categoria||'';
+  document.getElementById('efc').value=_cat;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    document.getElementById('efc').value=_cat;
+  }));
+  setTimeout(()=>{ document.getElementById('efc').value=_cat; },200);
   document.getElementById('ovl-e').classList.add('open');
   setTimeout(()=>document.getElementById('efd').focus(),120);
 }
@@ -2307,6 +2351,148 @@ function setEmoji(inputId, emoji){
 }
 
 const NOMES_CORES={'#8B5CF6':'Roxo','#F97316':'Laranja','#EF4444':'Vermelho','#3B82F6':'Azul','#F59E0B':'Amarelo','#16A34A':'Verde','#EC4899':'Rosa','#6366F1':'Índigo','#14B8A6':'Turquesa','#64748B':'Cinza','#1E293B':'Preto','#B45309':'Marrom'};
+
+// ── BANCOS BRASILEIROS ─────────────────────────────────────
+const BANCOS={
+  nubank:      {nome:'Nubank',         domain:'nubank.com.br',         cor:'#8B5CF6', keywords:['nubank','nu ','nu pagamentos']},
+  inter:       {nome:'Inter',          domain:'inter.co',              cor:'#F97316', keywords:['inter','banco inter']},
+  bradesco:    {nome:'Bradesco',       domain:'bradesco.com.br',       cor:'#EF4444', keywords:['bradesco']},
+  santander:   {nome:'Santander',      domain:'santander.com.br',      cor:'#EF4444', keywords:['santander']},
+  bb:          {nome:'Banco do Brasil',domain:'bb.com.br',             cor:'#F59E0B', keywords:['banco do brasil','bb ','b. brasil']},
+  caixa:       {nome:'Caixa',          domain:'caixa.gov.br',          cor:'#3B82F6', keywords:['caixa','cef']},
+  c6:          {nome:'C6 Bank',        domain:'c6bank.com.br',         cor:'#1E293B', keywords:['c6 bank','c6bank','c6']},
+  itau:        {nome:'Itaú',           domain:'itau.com.br',           cor:'#F97316', keywords:['itaú','itau']},
+  btg:         {nome:'BTG Pactual',    domain:'btgpactual.com',        cor:'#3B82F6', keywords:['btg','pactual']},
+  next:        {nome:'Next',           domain:'next.me',               cor:'#16A34A', keywords:['next']},
+  neon:        {nome:'Neon',           domain:'neon.com.br',           cor:'#14B8A6', keywords:['neon']},
+  pagbank:     {nome:'PagBank',        domain:'pagbank.com.br',        cor:'#F59E0B', keywords:['pagbank','pagseguro']},
+  picpay:      {nome:'PicPay',         domain:'picpay.com',            cor:'#16A34A', keywords:['picpay']},
+  stone:       {nome:'Stone',          domain:'stone.com.br',          cor:'#16A34A', keywords:['stone']},
+  iti:         {nome:'Iti',            domain:'iti.itau.com.br',       cor:'#F97316', keywords:['iti ','iti-','banco iti']},
+  pan:         {nome:'Banco Pan',      domain:'bancopan.com.br',       cor:'#F97316', keywords:['banco pan','pan ']},
+  bmg:         {nome:'BMG',            domain:'bancobmg.com.br',       cor:'#EF4444', keywords:['bmg']},
+  bv:          {nome:'BV',             domain:'bv.com.br',             cor:'#6366F1', keywords:['bv ','banco bv','bv$']},
+  sofisa:      {nome:'Sofisa',         domain:'sofisa.com.br',         cor:'#F97316', keywords:['sofisa']},
+  will:        {nome:'WillBank',       domain:'willbank.com.br',       cor:'#F59E0B', keywords:['will','willbank']},
+  mercadopago: {nome:'Mercado Pago',   domain:'mercadopago.com.br',    cor:'#3B82F6', keywords:['mercado pago','mercadopago']},
+  ame:         {nome:'AME Digital',    domain:'amedigital.com',        cor:'#EF4444', keywords:['ame digital','ame ']},
+};
+
+function detectarBanco(nome){
+  if(!nome)return null;
+  var n=nome.toLowerCase().trim()+' ';
+  var entries=Object.entries(BANCOS);
+  for(var i=0;i<entries.length;i++){
+    var b=entries[i][1];
+    for(var j=0;j<b.keywords.length;j++){
+      if(n.includes(b.keywords[j]))return{slug:entries[i][0],...b};
+    }
+  }
+  return null;
+}
+
+function ccLogoErr(img){
+  img.style.display='none';
+  var fb=img.nextElementSibling;
+  if(fb)fb.style.display='';
+}
+
+function iconCartao(cc){
+  var b=detectarBanco(cc.nome);
+  if(b){
+    return '<img class="cc-bank-logo" src="https://logo.clearbit.com/'+b.domain+'?size=40" onerror="ccLogoErr(this)" alt="'+b.nome+'"><span class="cc-logo-fb" style="display:none;font-size:22px">'+(cc.bandeira||'💳')+'</span>';
+  }
+  return '<span style="font-size:22px">'+(cc.bandeira||'💳')+'</span>';
+}
+
+function onCCNomeInput(val){
+  var b=detectarBanco(val);
+  var det=document.getElementById('cc-banco-detect');
+  var logo=document.getElementById('cc-banco-det-logo');
+  var nomeDet=document.getElementById('cc-banco-det-nome');
+  if(!det)return;
+  if(b){
+    if(logo){logo.src='https://logo.clearbit.com/'+b.domain+'?size=64';logo.style.opacity='1';}
+    if(nomeDet)nomeDet.textContent=b.nome+' detectado';
+    det.classList.add('show');
+    setCorCartao(b.cor);
+  }else{
+    det.classList.remove('show');
+  }
+}
+
+// ── PARCELAS PENDENTES ─────────────────────────────────────
+var _parcelasOpen=true;
+
+function getParcelas(){
+  var hoje=new Date();
+  var inicioMes=new Date(hoje.getFullYear(),hoje.getMonth(),1);
+  var grupos={};
+  cartoes.forEach(function(cc){
+    cc.gastos.forEach(function(g){
+      if(!g.totalParcelas||g.totalParcelas<=1||!g.grupoId)return;
+      if(!grupos[g.grupoId])grupos[g.grupoId]={cartao:cc,gastos:[]};
+      grupos[g.grupoId].gastos.push(g);
+    });
+  });
+  var result=[];
+  Object.values(grupos).forEach(function(grupo){
+    var gastos=grupo.gastos.slice().sort(function(a,b){return a.parcela-b.parcela;});
+    var total=gastos[0].totalParcelas;
+    var desc=gastos[0].desc;
+    var valorMensal=gastos[0].valor;
+    var ultimoGasto=gastos[gastos.length-1];
+    var dataFim=td(ultimoGasto.data);
+    if(dataFim<inicioMes)return;
+    var parcelaAtual=gastos.filter(function(g){return td(g.data)<=hoje;}).length;
+    if(parcelaAtual===0)parcelaAtual=1;
+    var restante=gastos.filter(function(g){return td(g.data)>hoje;}).reduce(function(s,g){return s+g.valor;},0);
+    result.push({cartao:grupo.cartao,desc:desc,total:total,parcelaAtual:parcelaAtual,valorMensal:valorMensal,dataFim:dataFim,restante:restante});
+  });
+  result.sort(function(a,b){return a.dataFim-b.dataFim;});
+  return result;
+}
+
+function toggleParcelas(){
+  _parcelasOpen=!_parcelasOpen;
+  var body=document.getElementById('parc-body');
+  var chev=document.getElementById('parc-chev');
+  if(body)body.style.display=_parcelasOpen?'':'none';
+  if(chev)chev.classList.toggle('open',_parcelasOpen);
+}
+
+function renderParcelasBlock(){
+  var parcelasAtivas=getParcelas();
+  var el=document.getElementById('cc-parcelas-block');
+  if(!el)return;
+  if(!parcelasAtivas.length){el.innerHTML='';return;}
+  var html='<div class="parc-section">';
+  html+='<div class="parc-hdr" onclick="toggleParcelas()">';
+  html+='<div class="parc-hdr-left">📆 Parcelamentos ativos <span class="parc-count">'+parcelasAtivas.length+'</span></div>';
+  html+='<span class="parc-chev'+(_parcelasOpen?' open':'')+'" id="parc-chev">›</span>';
+  html+='</div>';
+  html+='<div class="parc-body" id="parc-body"'+(_parcelasOpen?'':' style="display:none"')+'>';
+  parcelasAtivas.forEach(function(p){
+    var pct=Math.round(p.parcelaAtual/p.total*100);
+    var restMeses=p.total-p.parcelaAtual;
+    var mesAno=p.dataFim.toLocaleDateString('pt-BR',{month:'short',year:'numeric'});
+    var banco=detectarBanco(p.cartao.nome);
+    var logoMeta=banco?'<img style="width:14px;height:14px;border-radius:3px;object-fit:contain;vertical-align:middle;margin-right:2px" src="https://logo.clearbit.com/'+banco.domain+'?size=28" onerror="this.style.display=\'none\'">':(p.cartao.bandeira||'💳')+' ';
+    html+='<div class="parc-item">';
+    html+='<div class="parc-item-top">';
+    html+='<div class="parc-item-left"><div class="parc-desc">'+p.desc+'</div>';
+    html+='<div class="parc-meta">'+logoMeta+p.cartao.nome+'</div></div>';
+    html+='<div class="parc-item-right"><div class="parc-parcela">'+p.parcelaAtual+'/'+p.total+'</div>';
+    html+='<div class="parc-val">'+brl(p.valorMensal)+'/mês</div></div></div>';
+    html+='<div class="parc-bar-track"><div class="parc-bar-fill" style="width:'+pct+'%"></div></div>';
+    html+='<div class="parc-footer">';
+    html+='<span style="font-size:12px;color:var(--mu)">'+restMeses+' parcela'+(restMeses!==1?'s':'')+' restante'+(restMeses!==1?'s':'')+'</span>';
+    if(p.restante>0)html+='<span style="font-size:12px;font-weight:700;color:var(--r)">'+brl(p.restante)+' · até '+mesAno+'</span>';
+    html+='</div></div>';
+  });
+  html+='</div></div>';
+  el.innerHTML=html;
+}
 
 function setCorCartao(cor){
   document.getElementById('cc-cor').value=cor;
