@@ -1273,7 +1273,7 @@ function toggleCaixinha(id){
 }
 
 function renderPatrimonio(){
-  document.getElementById('nlbl').textContent='Patrimônio';
+  document.getElementById('nlbl').textContent=MESES[mes]+' '+ano;
   document.getElementById('cai-hist-block').innerHTML='';
   const empty=document.getElementById('cai-empty');
   empty.style.display=caixinhas.length?'none':'';
@@ -1539,6 +1539,7 @@ function toggleDia(id){
 
 // ── RENDER CATEGORIAS ─────────────────────────────────────
 function renderCats(){
+  document.getElementById('nlbl').textContent='Categorias';
   initNotifBtn();
   const mk=(arr,tipo,tipoKey)=>arr.map((cat,i)=>{
     const icon=(cat.charCodeAt(0)>127)?'':gi(cat,tipo)+' ';
@@ -2463,7 +2464,7 @@ function onCCNomeInput(val){
 }
 
 // ── PARCELAS PENDENTES ─────────────────────────────────────
-var _parcelasOpen=true;
+var _parcelasOpen=false;
 
 function getParcelas(){
   var dataFimMes=new Date(ano,mes+1,0); // último dia do mês selecionado
