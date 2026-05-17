@@ -2400,7 +2400,7 @@ function ccLogoErr(img){
 function iconCartao(cc){
   var b=detectarBanco(cc.nome);
   if(b){
-    return '<img class="cc-bank-logo" src="https://logo.clearbit.com/'+b.domain+'?size=40" onerror="ccLogoErr(this)" alt="'+b.nome+'"><span class="cc-logo-fb" style="display:none;font-size:22px">'+(cc.bandeira||'💳')+'</span>';
+    return '<img class="cc-bank-logo" src="https://www.google.com/s2/favicons?domain='+b.domain+'&sz=64" onerror="ccLogoErr(this)" alt="'+b.nome+'"><span class="cc-logo-fb" style="display:none;font-size:22px">'+(cc.bandeira||'💳')+'</span>';
   }
   return '<span style="font-size:22px">'+(cc.bandeira||'💳')+'</span>';
 }
@@ -2412,7 +2412,7 @@ function onCCNomeInput(val){
   var nomeDet=document.getElementById('cc-banco-det-nome');
   if(!det)return;
   if(b){
-    if(logo){logo.src='https://logo.clearbit.com/'+b.domain+'?size=64';logo.style.opacity='1';}
+    if(logo){logo.src='https://www.google.com/s2/favicons?domain='+b.domain+'&sz=64';logo.style.opacity='1';}
     if(nomeDet)nomeDet.textContent=b.nome+' detectado';
     det.classList.add('show');
     setCorCartao(b.cor);
@@ -2425,8 +2425,8 @@ function onCCNomeInput(val){
 var _parcelasOpen=true;
 
 function getParcelas(){
-  var hoje=new Date();
-  var inicioMes=new Date(hoje.getFullYear(),hoje.getMonth(),1);
+  var dataFimMes=new Date(ano,mes+1,0); // último dia do mês selecionado
+  var inicioMesRef=new Date(ano,mes,1); // primeiro dia do mês selecionado
   var grupos={};
   cartoes.forEach(function(cc){
     cc.gastos.forEach(function(g){
@@ -2443,10 +2443,23 @@ function getParcelas(){
     var valorMensal=gastos[0].valor;
     var ultimoGasto=gastos[gastos.length-1];
     var dataFim=td(ultimoGasto.data);
-    if(dataFim<inicioMes)return;
-    var parcelaAtual=gastos.filter(function(g){return td(g.data)<=hoje;}).length;
-    if(parcelaAtual===0)parcelaAtual=1;
-    var restante=gastos.filter(function(g){return td(g.data)>hoje;}).reduce(function(s,g){return s+g.valor;},0);
+    // Pular se encerrou antes do mês selecionado
+    if(dataFim<inicioMesRef)return;
+    // Achar a parcela correspondente ao mês selecionado
+    var gastoDoMes=gastos.find(function(g){
+      var d=td(g.data);
+      return d.getMonth()===mes&&d.getFullYear()===ano;
+    });
+    var parcelaAtual;
+    if(gastoDoMes){
+      parcelaAtual=gastoDoMes.parcela;
+    }else{
+      // Pegar a última até o mês selecionado
+      var ate=gastos.filter(function(g){return td(g.data)<=dataFimMes;});
+      parcelaAtual=ate.length>0?ate[ate.length-1].parcela:1;
+    }
+    // Valor restante a partir do próximo mês
+    var restante=gastos.filter(function(g){return td(g.data)>dataFimMes;}).reduce(function(s,g){return s+g.valor;},0);
     result.push({cartao:grupo.cartao,desc:desc,total:total,parcelaAtual:parcelaAtual,valorMensal:valorMensal,dataFim:dataFim,restante:restante});
   });
   result.sort(function(a,b){return a.dataFim-b.dataFim;});
@@ -2477,7 +2490,7 @@ function renderParcelasBlock(){
     var restMeses=p.total-p.parcelaAtual;
     var mesAno=p.dataFim.toLocaleDateString('pt-BR',{month:'short',year:'numeric'});
     var banco=detectarBanco(p.cartao.nome);
-    var logoMeta=banco?'<img style="width:14px;height:14px;border-radius:3px;object-fit:contain;vertical-align:middle;margin-right:2px" src="https://logo.clearbit.com/'+banco.domain+'?size=28" onerror="this.style.display=\'none\'">':(p.cartao.bandeira||'💳')+' ';
+    var logoMeta=banco?'<img style="width:14px;height:14px;border-radius:3px;object-fit:contain;vertical-align:middle;margin-right:2px" src="https://www.google.com/s2/favicons?domain='+banco.domain+'&sz=32" onerror="this.style.display=\'none\'">':(p.cartao.bandeira||'💳')+' ';
     html+='<div class="parc-item">';
     html+='<div class="parc-item-top">';
     html+='<div class="parc-item-left"><div class="parc-desc">'+p.desc+'</div>';
