@@ -189,7 +189,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .rec-tog{width:44px;height:24px;border-radius:12px;border:none;cursor:pointer;font-size:11px;font-weight:700;flex-shrink:0}
 .ntcard{background:var(--card);border-radius:12px;border:1px solid var(--border);padding:16px;margin-bottom:12px}
 .ntcard h3{font-size:14px;font-weight:700;margin-bottom:10px}
-.cc-hero{border-radius:20px;padding:20px;margin-bottom:12px;color:#fff;position:relative;overflow:hidden;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)}
+.cc-hero{border-radius:20px;padding:20px;margin-bottom:12px;color:#fff;position:relative;overflow:hidden;background:linear-gradient(135deg,#1e2a4a 0%,#1a3a6e 50%,#1a4a8a 100%)}
 .cc-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.05)}
 .cc-hero-lbl{font-size:11px;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
 .cc-hero-val{font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:2px}
@@ -299,9 +299,37 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .cc-mini-header .cc-mini-nome{color:#fff}
 .cc-mini-header .cc-mini-sub{color:rgba(255,255,255,.75)}
 .cc-mini-header .cc-mini-valor{color:#fff}
-/* Caixinhas colapsáveis */
-.cai-mini-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;cursor:pointer;user-select:none;gap:10px}
-.cai-mini-hdr:active{opacity:.85}
+/* Recorrentes redesenhados */
+.rec-group-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 4px;margin-bottom:6px;margin-top:12px}
+.rec-group-hdr:first-child{margin-top:0}
+.rec-group-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu)}
+.rec-group-total{font-size:12px;font-weight:700}
+.rec-card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.rec-card-main{display:flex;align-items:center;gap:10px;padding:11px 13px}
+.rec-card-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.rec-card-info{flex:1;min-width:0}
+.rec-card-nome{font-size:13px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec-card-meta{font-size:11px;color:var(--mu);margin-top:1px}
+.rec-card-obs{font-size:11px;color:var(--mu);margin-top:2px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec-card-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.rec-card-val{font-size:13px;font-weight:800}
+.rec-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap}
+.rec-badge.ok{background:var(--vl);color:var(--v)}
+.rec-badge.pend{background:var(--aml);color:var(--am)}
+.rec-badge.off{background:var(--bg);color:var(--mu)}
+.rec-card-actions{display:flex;border-top:1px solid var(--bg)}
+.rec-card-actions button{flex:1;padding:7px 4px;border:none;background:none;font-size:11px;font-weight:600;cursor:pointer;color:var(--mu)}
+.rec-card-actions button:not(:last-child){border-right:1px solid var(--bg)}
+.rec-card-actions button:hover{background:var(--bg)}
+.rec-card-actions .rec-act-launch{color:var(--v)}
+.rec-card-actions .rec-act-edit{color:var(--az)}
+.rec-card-actions .rec-act-del{color:var(--r)}
+.rec-total-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.rec-alerta-resumo{background:var(--aml);border:1px solid var(--am);border-radius:10px;padding:10px 13px;margin-bottom:10px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.rec-alerta-resumo-txt{font-size:12px;font-weight:600;color:var(--am);flex:1}
+/* Confirmar modal */
+.rec-confirm-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bg);gap:8px}
+.rec-confirm-item:last-child{border-bottom:none}
 /* Seção de parcelamentos */
 .parc-section{background:var(--card);border-radius:14px;border:1px solid var(--border);margin-bottom:12px;overflow:hidden}
 .parc-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 15px;cursor:pointer;user-select:none}
@@ -518,6 +546,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
   <!-- RESUMO -->
   <div id="tab-resumo">
     <div id="dash-hero-block"></div>
+    <div id="resumo-rec-alerta"></div>
     <div class="slbl" id="la"></div>
     <div class="ano-grid">
       <div class="ano-card verde ano-card-click" onclick="abrirGraficoAnual('Receita')" title="Ver por mês"><div class="ano-card-lbl">Receita ↗</div><div class="ano-card-val" id="ra" style="color:var(--v)">—</div></div>
@@ -586,14 +615,9 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 
   <!-- RECORRENTES -->
   <div id="tab-recorrentes" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-      <div>
-        <div style="font-weight:700;font-size:15px">🔁 Lançamentos Recorrentes</div>
-        <div style="font-size:12px;color:var(--mu);margin-top:2px">Gastos fixos que se repetem todo mês</div>
-      </div>
-      <button onclick="lancarRecorrentes()" style="padding:9px 16px;background:var(--v);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer">🚀 Lançar este mês</button>
-    </div>
-    <div id="rec-lista" class="lcrd" style="margin-bottom:14px"></div>
+    <div id="rec-alerta-bloco"></div>
+    <div id="rec-total-bloco"></div>
+    <div id="rec-lista" style="margin-bottom:14px"></div>
     <div class="ntcard" style="margin-bottom:0">
       <h3>➕ Adicionar recorrente</h3>
       <div class="fld"><label>Nome</label><input id="rn" type="text" placeholder="Ex: Prestação do Veículo"/></div>
@@ -611,6 +635,7 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
         </div>
         <div class="fld"><label>Categoria</label><select id="rc"></select></div>
       </div>
+      <div class="fld"><label>Observação (opcional)</label><input id="robs" type="text" placeholder="Ex: Conta 1234, automático..."/></div>
       <button onclick="adicionarRecorrente()" style="padding:9px 16px;background:var(--v);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;width:100%">+ Cadastrar recorrente</button>
     </div>
   </div>
@@ -862,6 +887,51 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
   </div>
 </div>
 
+<!-- MODAL EDITAR RECORRENTE -->
+<div class="ovl" id="ovl-edit-rec" onclick="fecharSe(event,'ovl-edit-rec')">
+  <div class="mdl" style="max-width:400px">
+    <div class="mhdr"><span class="mtit">✏️ Editar Recorrente</span><button class="mcls" onclick="fecharModal('ovl-edit-rec')">×</button></div>
+    <div class="fld"><label>Nome</label><input id="erec-nome" type="text" placeholder="Nome"/></div>
+    <div class="gf">
+      <div class="fld"><label>Valor (R$)</label><input id="erec-valor" type="number" min="0" step="0.01"/></div>
+      <div class="fld"><label>Dia do mês</label><input id="erec-dia" type="number" min="1" max="31"/></div>
+    </div>
+    <div class="gf">
+      <div class="fld"><label>Tipo</label>
+        <select id="erec-tipo" onchange="popularCatEditRec()">
+          <option value="Gasto">💸 Gasto</option>
+          <option value="Receita">💰 Receita</option>
+          <option value="Guardado">🏦 Investimentos</option>
+        </select>
+      </div>
+      <div class="fld"><label>Categoria</label><select id="erec-cat"></select></div>
+    </div>
+    <div class="fld"><label>Observação (opcional)</label><input id="erec-obs" type="text" placeholder="Ex: Automático, conta 1234..."/></div>
+    <div class="errmsg" id="erec-err" style="display:none"></div>
+    <div class="brow">
+      <button class="bcanc" onclick="fecharModal('ovl-edit-rec')">Cancelar</button>
+      <button class="badd" style="background:var(--az)" onclick="salvarEditRecorrente()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR LANÇAMENTO -->
+<div class="ovl" id="ovl-confirm-rec" onclick="fecharSe(event,'ovl-confirm-rec')">
+  <div class="mdl" style="max-width:400px">
+    <div class="mhdr"><span class="mtit">🚀 Confirmar lançamento</span><button class="mcls" onclick="fecharModal('ovl-confirm-rec')">×</button></div>
+    <div style="font-size:13px;color:var(--mu);margin-bottom:12px" id="rec-confirm-desc"></div>
+    <div id="rec-confirm-lista" style="margin-bottom:14px"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--border);margin-bottom:12px">
+      <span style="font-size:13px;font-weight:700">Total a lançar</span>
+      <span style="font-size:16px;font-weight:800;color:var(--r)" id="rec-confirm-total"></span>
+    </div>
+    <div class="brow">
+      <button class="bcanc" onclick="fecharModal('ovl-confirm-rec')">Cancelar</button>
+      <button class="badd" style="background:var(--v)" onclick="confirmarLancamento()">✅ Lançar tudo</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL PAGAR FATURA -->
 <div class="ovl" id="ovl-fatura" onclick="fecharSe(event,'ovl-fatura')">
   <div class="mdl" style="max-width:400px">
@@ -1107,7 +1177,7 @@ async function carregarTudo(){
       const saldo=caiMovs.filter(m=>m.caixinhaId===r.id).reduce((s,m)=>m.tipo==='Depósito'?s+m.valor:s-m.valor,0);
       return{id:r.id,nome:r.nome,dono:r.dono||'',emoji:r.emoji||'🐷',meta:r.meta||0,ativa:r.ativa,saldo:+saldo.toFixed(2),metaMensal:r.meta_mensal||0,metaPct:r.meta_percentual||0,pctCdi:r.percentual_cdi||0,inicioCdi:r.data_inicio_cdi||''};
     });
-    recorrentes=(rec.data||[]).map(r=>({nid:r.id,nome:r.nome,tipo:r.tipo,categoria:r.categoria,valor:r.valor,dia:r.dia_mes,ativo:r.ativo}));
+    recorrentes=(rec.data||[]).map(r=>({nid:r.id,nome:r.nome,tipo:r.tipo,categoria:r.categoria,valor:r.valor,dia:r.dia_mes,ativo:r.ativo,obs:r.obs||''}));
   }catch(e){badge('Erro ao carregar: '+e.message,'err');}
   finally{showLoading(false);}
 }
@@ -1222,6 +1292,18 @@ function renderResumo(){
   document.getElementById('ga').textContent=brl(gastA);
   document.getElementById('gda').textContent=brl(totalInvestimentos);
   document.getElementById('rempty').style.display=dm.length?'none':'';
+  // Alerta recorrentes pendentes no mês atual
+  const alertaRecEl=document.getElementById('resumo-rec-alerta');
+  if(alertaRecEl){
+    const hoje2=new Date();
+    if(mes===hoje2.getMonth()&&ano===hoje2.getFullYear()){
+      const lançadosMesR=dm.filter(t=>t.obs==='Recorrente').map(t=>t.desc);
+      const pendR=recorrentes.filter(r=>r.ativo&&!lançadosMesR.includes(r.nome));
+      if(pendR.length){
+        alertaRecEl.innerHTML='<div class="rec-alerta-resumo" onclick="irParaAba(\'recorrentes\')"><span style="font-size:18px">🔁</span><div class="rec-alerta-resumo-txt">'+pendR.length+' recorrente'+(pendR.length>1?'s':'')+' pendente'+(pendR.length>1?'s':'')+' — toque para lançar</div><span style="font-size:14px;color:var(--am)">›</span></div>';
+      }else{alertaRecEl.innerHTML='';}
+    }else{alertaRecEl.innerHTML='';}
+  }
   renderRelatorio();
 }
 
@@ -2079,18 +2161,76 @@ function popularCatRec(){
 function renderRecorrentes(){
   document.getElementById('nlbl').textContent='Recorrentes';
   popularCatRec();
+  const chave=mes+'-'+ano;
+  const jaMesAtual=recMeses.includes(chave);
+  // IDs já lançados no mês (por nome+dia para comparar)
+  const lançadosMes=doMes(mes,ano).filter(t=>t.obs==='Recorrente').map(t=>t.desc);
+  const corTipoIcon={Gasto:'var(--rl)',Receita:'var(--vl)',Guardado:'var(--azl)'};
+
+  // Ordenar por dia
+  const sorted=[...recorrentes].sort((a,b)=>a.dia-b.dia);
+  const gastos=sorted.filter(r=>r.tipo==='Gasto');
+  const receitas=sorted.filter(r=>r.tipo==='Receita');
+  const guardados=sorted.filter(r=>r.tipo==='Guardado');
+  const totalFixo=gastos.filter(r=>r.ativo).reduce((s,r)=>s+r.valor,0);
+  const totalRec=receitas.filter(r=>r.ativo).reduce((s,r)=>s+r.valor,0);
+  const pendentes=sorted.filter(r=>r.ativo&&!lançadosMes.includes(r.nome));
+
+  // Alerta
+  const alertBloco=document.getElementById('rec-alerta-bloco');
+  if(alertBloco){
+    if(pendentes.length&&mes===new Date().getMonth()&&ano===new Date().getFullYear()){
+      alertBloco.innerHTML='<div style="background:var(--aml);border:1px solid var(--am);border-radius:10px;padding:10px 13px;margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">⚠️</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--am)">'+pendentes.length+' recorrente'+(pendentes.length>1?'s':'')+' pendente'+(pendentes.length>1?'s':'')+' este mês</div><div style="font-size:11px;color:var(--am);opacity:.8">Toque em Lançar tudo para registrar</div></div><button onclick="lancarRecorrentes()" style="padding:6px 12px;background:var(--am);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">🚀 Lançar</button></div>';
+    }else{alertBloco.innerHTML='';}
+  }
+
+  // Total card
+  const totalBloco=document.getElementById('rec-total-bloco');
+  if(totalBloco&&recorrentes.length){
+    let th='<div class="rec-total-card"><div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Resumo mensal fixo</div>';
+    th+='<div style="display:flex;gap:10px;flex-wrap:wrap">';
+    if(totalFixo>0)th+='<div style="flex:1;min-width:120px"><div style="font-size:11px;color:var(--mu)">💸 Gastos fixos</div><div style="font-size:17px;font-weight:800;color:var(--r)">'+brl(totalFixo)+'</div></div>';
+    if(totalRec>0)th+='<div style="flex:1;min-width:120px"><div style="font-size:11px;color:var(--mu)">💰 Receitas fixas</div><div style="font-size:17px;font-weight:800;color:var(--v)">'+brl(totalRec)+'</div></div>';
+    const saldoFix=totalRec-totalFixo;
+    if(totalFixo>0&&totalRec>0)th+='<div style="flex:1;min-width:120px"><div style="font-size:11px;color:var(--mu)">⚖️ Saldo fixo</div><div style="font-size:17px;font-weight:800;color:'+(saldoFix>=0?'var(--v)':'var(--r)')+'">'+brl(saldoFix)+'</div></div>';
+    th+='</div></div>';
+    totalBloco.innerHTML=th;
+  }
+
+  function mkGrupo(lista,titulo,corVal){
+    if(!lista.length)return'';
+    const tot=lista.filter(r=>r.ativo).reduce((s,r)=>s+r.valor,0);
+    let h='<div class="rec-group-hdr"><span class="rec-group-title">'+titulo+'</span>';
+    if(tot>0)h+='<span class="rec-group-total" style="color:'+corVal+'">'+brl(tot)+'/mês</span>';
+    h+='</div>';
+    lista.forEach(r=>{
+      const lançado=lançadosMes.includes(r.nome);
+      const badge=!r.ativo?'<span class="rec-badge off">OFF</span>':lançado?'<span class="rec-badge ok">✅ Lançado</span>':'<span class="rec-badge pend">⏳ Pendente</span>';
+      h+='<div class="rec-card">';
+      h+='<div class="rec-card-main">';
+      h+='<div class="rec-card-icon" style="background:'+corTipoIcon[r.tipo]+'">'+gi(r.categoria,r.tipo)+'</div>';
+      h+='<div class="rec-card-info">';
+      h+='<div class="rec-card-nome">'+r.nome+'</div>';
+      h+='<div class="rec-card-meta">'+r.categoria+' · Dia '+r.dia+' de cada mês</div>';
+      if(r.obs)h+='<div class="rec-card-obs">'+r.obs+'</div>';
+      h+='</div>';
+      h+='<div class="rec-card-right">';
+      h+='<span class="rec-card-val" style="color:'+corVal+'">'+brl(r.valor)+'</span>';
+      h+=badge;
+      h+='</div></div>';
+      h+='<div class="rec-card-actions">';
+      if(r.ativo&&!lançado)h+='<button class="rec-act-launch" onclick="lancarUm(\''+r.nid+'\')">🚀 Lançar</button>';
+      h+='<button class="rec-act-edit" onclick="abrirEditRecorrente(\''+r.nid+'\')">✏️ Editar</button>';
+      h+='<button onclick="toggleRecorrente(\''+r.nid+'\','+r.ativo+')" style="color:'+(r.ativo?'var(--am)':'var(--v)')+'">'+( r.ativo?'⏸ Pausar':'▶ Ativar')+'</button>';
+      h+='<button class="rec-act-del" onclick="removerRecorrente(\''+r.nid+'\')">🗑️</button>';
+      h+='</div></div>';
+    });
+    return h;
+  }
+
   const el=document.getElementById('rec-lista');
   if(!recorrentes.length){el.innerHTML='<p style="color:var(--mu);text-align:center;padding:1.5rem;font-size:13px">Nenhum recorrente cadastrado ainda.</p>';return;}
-  const corTipo={Gasto:'var(--rl)',Receita:'var(--vl)',Guardado:'var(--azl)'};
-  let html='';
-  recorrentes.forEach(function(r){
-    html+='<div class="rec-item"><div class="rec-icon" style="background:'+(corTipo[r.tipo]||'var(--rl)')+'">'+gi(r.categoria,r.tipo)+'</div>';
-    html+='<div class="rec-info"><div class="rec-nome">'+r.nome+'</div><div class="rec-meta">'+r.categoria+' · Dia '+r.dia+' de cada mês</div></div>';
-    html+='<span class="rec-val" style="color:'+(r.tipo==='Receita'?'var(--v)':'var(--r)')+'">'+brl(r.valor)+'</span>';
-    html+='<button class="rec-tog" onclick="toggleRecorrente(\''+r.nid+'\','+r.ativo+')" style="background:'+(r.ativo?'var(--v)':'#ddd')+';color:#fff">'+(r.ativo?'ON':'OFF')+'</button>';
-    html+='<button class="ldel" onclick="removerRecorrente(\''+r.nid+'\')">×</button></div>';
-  });
-  el.innerHTML=html;
+  el.innerHTML=mkGrupo(gastos,'💸 Gastos Fixos','var(--r)')+mkGrupo(receitas,'💰 Receitas Fixas','var(--v)')+mkGrupo(guardados,'🏦 Investimentos Fixos','var(--az)');
 }
 
 async function adicionarRecorrente(){
@@ -2099,11 +2239,12 @@ async function adicionarRecorrente(){
   const dia=parseInt(document.getElementById('rd').value);
   const tipo=document.getElementById('rt').value;
   const cat=document.getElementById('rc').value;
+  const obs=document.getElementById('robs').value.trim();
   if(!nome||!val||!dia){badge('Preencha todos os campos','err');return;}
   if(dia<1||dia>31){badge('Dia inválido (1-31)','err');return;}
   badge('🔄 Salvando...','sync');
-  await supa.from('recorrentes').insert({user_id:authUser.id,nome,tipo,categoria:cat,valor:val,dia_mes:dia,ativo:true});
-  document.getElementById('rn').value='';document.getElementById('rv').value='';document.getElementById('rd').value='';
+  await supa.from('recorrentes').insert({user_id:authUser.id,nome,tipo,categoria:cat,valor:val,dia_mes:dia,ativo:true,obs:obs||null});
+  document.getElementById('rn').value='';document.getElementById('rv').value='';document.getElementById('rd').value='';document.getElementById('robs').value='';
   await carregarTudo();renderRecorrentes();badge('✅ Recorrente cadastrado!','ok');
 }
 
@@ -2118,21 +2259,100 @@ async function removerRecorrente(id){
   await carregarTudo();renderRecorrentes();badge('Recorrente removido','ok');
 }
 
+let _recEditId=null;
+function popularCatEditRec(){
+  const tipo=document.getElementById('erec-tipo').value;
+  const cats=tipo==='Receita'?catR:tipo==='Guardado'?catGD:catG;
+  document.getElementById('erec-cat').innerHTML=cats.map(c=>'<option value="'+c+'">'+gi(c,tipo)+' '+c+'</option>').join('');
+}
+
+function abrirEditRecorrente(id){
+  const r=recorrentes.find(x=>x.nid===id);if(!r)return;
+  _recEditId=id;
+  document.getElementById('erec-nome').value=r.nome;
+  document.getElementById('erec-valor').value=r.valor;
+  document.getElementById('erec-dia').value=r.dia;
+  document.getElementById('erec-tipo').value=r.tipo;
+  document.getElementById('erec-obs').value=r.obs||'';
+  popularCatEditRec();
+  setTimeout(()=>{document.getElementById('erec-cat').value=r.categoria;},50);
+  document.getElementById('erec-err').style.display='none';
+  document.getElementById('ovl-edit-rec').classList.add('open');
+}
+
+async function salvarEditRecorrente(){
+  const nome=document.getElementById('erec-nome').value.trim();
+  const val=parseFloat(document.getElementById('erec-valor').value);
+  const dia=parseInt(document.getElementById('erec-dia').value);
+  const tipo=document.getElementById('erec-tipo').value;
+  const cat=document.getElementById('erec-cat').value;
+  const obs=document.getElementById('erec-obs').value.trim();
+  const err=document.getElementById('erec-err');
+  if(!nome||!val||!dia){err.textContent='Preencha todos os campos.';err.style.display='';return;}
+  err.style.display='none';badge('🔄 Salvando...','sync');
+  await supa.from('recorrentes').update({nome,tipo,categoria:cat,valor:val,dia_mes:dia,obs:obs||null}).eq('id',_recEditId);
+  fecharModal('ovl-edit-rec');
+  await carregarTudo();renderRecorrentes();badge('✅ Recorrente atualizado!','ok');
+}
+
+async function lancarUm(id){
+  const r=recorrentes.find(x=>x.nid===id);if(!r)return;
+  const dia=Math.min(r.dia,new Date(ano,mes+1,0).getDate());
+  const ds=ano+'-'+String(mes+1).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
+  badge('🔄 Lançando...','sync');
+  await supa.from('transacoes').insert({user_id:authUser.id,descricao:r.nome,tipo:r.tipo,categoria:r.categoria,valor:r.valor,data:ds,obs:'Recorrente'});
+  await carregarTudo();renderRecorrentes();badge('✅ '+r.nome+' lançado!','ok');
+}
+
+let _recParaLancar=[];
 async function lancarRecorrentes(){
+  const lançadosMes=doMes(mes,ano).filter(t=>t.obs==='Recorrente').map(t=>t.desc);
   const ativos=recorrentes.filter(r=>r.ativo);
   if(!ativos.length){badge('Nenhum recorrente ativo','err');return;}
+  _recParaLancar=ativos;
+  // Montar modal de confirmação
   const chave=mes+'-'+ano;
-  if(recMeses.includes(chave)){if(!confirm('Os recorrentes deste mês já foram lançados. Lançar novamente?'))return;}
-  badge('🔄 Lançando '+ativos.length+' recorrente(s)...','sync');
+  const jaLancou=recMeses.includes(chave);
+  document.getElementById('rec-confirm-desc').textContent=(jaLancou?'⚠️ Já lançado este mês. Lançar novamente irá duplicar os registros.':'Confirme os recorrentes que serão lançados em '+MESES[mes]+' '+ano+':');
+  const total=ativos.reduce((s,r)=>s+r.valor,0);
+  document.getElementById('rec-confirm-total').textContent=brl(total);
+  let lista='';
+  ativos.forEach(r=>{
+    const lc=lançadosMes.includes(r.nome);
+    lista+='<div class="rec-confirm-item"><div style="min-width:0"><div style="font-size:13px;font-weight:600;color:var(--tx)">'+r.nome+'</div><div style="font-size:11px;color:var(--mu)">Dia '+r.dia+' · '+r.categoria+'</div></div>';
+    lista+='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0"><span style="font-size:13px;font-weight:700;color:'+(r.tipo==='Receita'?'var(--v)':'var(--r)')+'">'+brl(r.valor)+'</span>';
+    if(lc)lista+='<span style="font-size:10px;color:var(--am);font-weight:600">já lançado</span>';
+    lista+='</div></div>';
+  });
+  document.getElementById('rec-confirm-lista').innerHTML=lista;
+  document.getElementById('ovl-confirm-rec').classList.add('open');
+}
+
+async function confirmarLancamento(){
+  fecharModal('ovl-confirm-rec');
+  badge('🔄 Lançando '+_recParaLancar.length+' recorrente(s)...','sync');
   const inserts=[];
-  ativos.forEach(function(r){
+  _recParaLancar.forEach(function(r){
     const dia=Math.min(r.dia,new Date(ano,mes+1,0).getDate());
     const ds=ano+'-'+String(mes+1).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
     inserts.push({user_id:authUser.id,descricao:r.nome,tipo:r.tipo,categoria:r.categoria,valor:r.valor,data:ds,obs:'Recorrente'});
   });
   await supa.from('transacoes').insert(inserts);
+  const chave=mes+'-'+ano;
   if(!recMeses.includes(chave)){recMeses.push(chave);ls.set('cf_rec_meses',recMeses);}
-  await carregarTudo();render();badge('✅ '+ativos.length+' recorrente(s) lançado(s)!','ok');
+  await carregarTudo();render();badge('✅ '+_recParaLancar.length+' recorrente(s) lançado(s)!','ok');
+}
+
+function irParaAba(t){
+  tab=t;
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('[id^="tab-"]').forEach(d=>d.style.display='none');
+  const btn=document.querySelector('.tb[onclick*="\''+t+'\'"]');
+  if(btn)btn.classList.add('on');
+  const div=document.getElementById('tab-'+t);
+  if(div)div.style.display='';
+  render();
+  window.scrollTo(0,0);
 }
 
 // ── MODAL TRANSAÇÃO ───────────────────────────────────────
