@@ -1024,19 +1024,11 @@ const supa=supabase.createClient(SUPA_URL,SUPA_KEY,{
   auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
 });
 
-// Manter sessão quando app volta do background
-supa.auth.onAuthStateChange(function(event,session){
-  if(event==='SIGNED_IN'&&session&&!authUser){
-    authUser=session.user;
-    carregarPerfil().then(()=>carregarTudo()).then(()=>showApp());
-  }
-  if(event==='TOKEN_REFRESHED'&&session){
-    authUser=session.user;
-  }
-  if(event==='SIGNED_OUT'){
-    authUser=null;
-    document.getElementById('app-screen').style.display='none';
-    document.getElementById('auth-screen').style.display='flex';
+// Restaurar sessão quando app volta do background (PWA Android)
+document.addEventListener('visibilitychange',async function(){
+  if(document.visibilityState==='visible'&&!authUser){
+    const {data:{session}}=await supa.auth.getSession();
+    if(session){authUser=session.user;await carregarPerfil();await carregarTudo();showApp();}
   }
 });
 
