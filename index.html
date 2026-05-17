@@ -293,8 +293,15 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
 .cc-tipo-btn.on-parc{background:var(--az);color:#fff}
 /* Logos de banco */
 .cc-bank-logo{width:30px;height:30px;border-radius:8px;object-fit:contain;flex-shrink:0;display:block}
-.cc-icon-wrap{display:flex;align-items:center;justify-content:center;width:36px;height:36px;flex-shrink:0}
+.cc-icon-wrap{display:flex;align-items:center;justify-content:center;width:38px;height:38px;flex-shrink:0;background:rgba(255,255,255,.2);border-radius:10px;padding:4px}
 .dark .cc-bank-logo{background:rgba(255,255,255,.08);padding:3px}
+/* Cards — texto sempre branco no mini-header */
+.cc-mini-header .cc-mini-nome{color:#fff}
+.cc-mini-header .cc-mini-sub{color:rgba(255,255,255,.75)}
+.cc-mini-header .cc-mini-valor{color:#fff}
+/* Caixinhas colapsáveis */
+.cai-mini-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;cursor:pointer;user-select:none;gap:10px}
+.cai-mini-hdr:active{opacity:.85}
 /* Seção de parcelamentos */
 .parc-section{background:var(--card);border-radius:14px;border:1px solid var(--border);margin-bottom:12px;overflow:hidden}
 .parc-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 15px;cursor:pointer;user-select:none}
@@ -543,11 +550,11 @@ button{font-family:inherit;cursor:pointer}input,select{font-family:inherit}
         <div class="slbl" style="margin:0">🐷 Caixinhas</div>
         <button onclick="abrirModalNovaCaixinha()" style="padding:6px 12px;background:var(--v);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">+ Nova caixinha</button>
       </div>
-      <div id="cai-cards" style="display:flex;flex-direction:column;gap:14px;margin-bottom:14px"></div>
+      <div id="cai-cards" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
       <div id="cai-hist-block"></div>
       <div id="cai-empty" style="display:none" class="empty"><div class="ei">🐷</div><p class="ep">Nenhuma caixinha ainda.<br>Clique em <strong style="color:var(--v)">+ Nova caixinha</strong> para criar.</p></div>
     </div>
-    <div class="slbl" style="margin-top:8px">📦 Investimentos</div>
+    <div class="slbl" style="margin-top:8px" id="invest-slbl">📦 Investimentos</div>
     <div class="lcrd" id="pat-lista"></div>
     <div id="pat-empty" style="display:none;margin-top:12px" class="empty"><div class="ei">🏦</div><p class="ep">Nenhum investimento registrado.<br>Toque em + e selecione Investimentos.</p></div>
   </div>
@@ -1256,9 +1263,17 @@ function renderRelatorio(){
 }
 
 // ── RENDER PATRIMÔNIO ─────────────────────────────────────
+var _caixinhasAbertas={};
+function toggleCaixinha(id){
+  _caixinhasAbertas[id]=!_caixinhasAbertas[id];
+  var exp=document.getElementById('cai-exp-'+id);
+  var chev=document.getElementById('cai-chev-'+id);
+  if(exp)exp.style.display=_caixinhasAbertas[id]?'':'none';
+  if(chev)chev.style.transform=_caixinhasAbertas[id]?'rotate(90deg)':'';
+}
+
 function renderPatrimonio(){
   document.getElementById('nlbl').textContent='Patrimônio';
-  document.getElementById('cai-cards').innerHTML='';
   document.getElementById('cai-hist-block').innerHTML='';
   const empty=document.getElementById('cai-empty');
   empty.style.display=caixinhas.length?'none':'';
@@ -1267,121 +1282,103 @@ function renderPatrimonio(){
     caixinhas.forEach(cx=>{
       const cor=cx.dono==='Lucas'?'#2563EB':cx.dono==='Dayanna'?'#DB2777':'#16A34A';
       const cls=cx.dono==='Lucas'?'cai-lucas':cx.dono==='Dayanna'?'cai-dayanna':'';
-      const pct=cx.meta>0?Math.min(100,(cx.saldo/cx.meta*100)).toFixed(0):0;
-      cards+='<div class="cai-card '+cls+'">';
-      cards+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
-      cards+='<div style="display:flex;align-items:center;gap:6px"><span style="font-size:16px">'+cx.emoji+'</span><span class="cai-nome" style="margin:0">'+cx.nome+'</span></div>';
-      if(cx.dono)cards+='<span class="cai-dono" style="color:'+cor+';margin:0;font-size:11px;padding:2px 8px;background:'+cor+'22;border-radius:20px">'+cx.dono+'</span>';
+      const pct=cx.meta>0?Math.min(100,(cx.saldo/cx.meta*100)).toFixed(0):null;
+      const isOpen=!!_caixinhasAbertas[cx.id];
+      // Card wrapper
+      cards+='<div class="cai-card '+cls+'" style="padding:0;overflow:hidden">';
+      // Mini-header clicável
+      cards+='<div class="cai-mini-hdr" onclick="toggleCaixinha(\''+cx.id+'\')">';
+      cards+='<div style="display:flex;align-items:center;gap:10px;min-width:0">';
+      cards+='<span style="font-size:22px;flex-shrink:0">'+cx.emoji+'</span>';
+      cards+='<div style="min-width:0"><div style="font-size:14px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cx.nome+'</div>';
+      if(cx.dono)cards+='<span style="font-size:10px;font-weight:700;color:'+cor+';background:'+cor+'22;padding:1px 7px;border-radius:20px;display:inline-block;margin-top:2px">'+cx.dono.toUpperCase()+'</span>';
+      cards+='</div></div>';
+      cards+='<div style="display:flex;align-items:center;gap:10px;flex-shrink:0">';
+      cards+='<div style="text-align:right"><div style="font-size:16px;font-weight:800;color:'+cor+'">'+brl(cx.saldo)+'</div>';
+      if(pct!==null)cards+='<div style="font-size:10px;color:var(--mu)">'+pct+'% da meta</div>';
       cards+='</div>';
-      cards+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
+      cards+='<span id="cai-chev-'+cx.id+'" style="font-size:18px;color:var(--mu);transition:transform .25s;display:block'+(isOpen?';transform:rotate(90deg)':'')+'">›</span>';
+      cards+='</div></div>';
+      // Barra de progresso slim (sempre visível se tem meta)
+      if(pct!==null)cards+='<div style="height:3px;background:var(--bg)"><div style="height:100%;width:'+pct+'%;background:'+cor+';transition:width .5s"></div></div>';
+      // Conteúdo expandido
+      cards+='<div id="cai-exp-'+cx.id+'" style="display:'+(isOpen?'':'none')+'"><div style="padding:14px 15px;border-top:1px solid var(--bg)">';
+      // Saldo
+      cards+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
       cards+='<div style="font-size:11px;color:var(--lb);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Saldo atual</div>';
-      cards+='<div style="font-size:24px;font-weight:800;color:'+cor+'">'+brl(cx.saldo)+'</div>';
-      cards+='</div>';
+      cards+='<div style="font-size:24px;font-weight:800;color:'+cor+'">'+brl(cx.saldo)+'</div></div>';
+      // Meta total
       if(cx.meta>0){
         cards+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
         cards+='<span style="font-size:11px;color:var(--mu)">Meta: '+brl(cx.meta)+'</span>';
-        cards+='<span style="font-size:11px;font-weight:700;color:'+cor+'">'+pct+'%</span>';
-        cards+='</div>';
+        cards+='<span style="font-size:11px;font-weight:700;color:'+cor+'">'+pct+'%</span></div>';
         cards+='<div class="cai-meta-bar" style="margin-bottom:10px"><div class="cai-meta-fill" style="width:'+pct+'%;background:'+cor+'"></div></div>';
       }
-      // Indicador de meta mensal
+      // Meta mensal
       if(cx.metaMensal>0||cx.metaPct>0){
         const recMes=soma(doMes(mes,ano),'Receita');
         const metaIdeal=cx.metaPct>0?(recMes*cx.metaPct/100):cx.metaMensal;
-        const depMes=caiMovs.filter(function(m){
-          return m.caixinhaId===cx.id&&m.tipo==='Depósito'&&
-            (function(){var d=td(m.data);return d.getMonth()===mes&&d.getFullYear()===ano;})();
-        }).reduce(function(s,m){return s+m.valor;},0);
+        const depMes=caiMovs.filter(function(m){return m.caixinhaId===cx.id&&m.tipo==='Depósito'&&(function(){var d=td(m.data);return d.getMonth()===mes&&d.getFullYear()===ano;})();}).reduce(function(s,m){return s+m.valor;},0);
         const pctM=metaIdeal>0?Math.min(100,(depMes/metaIdeal*100)):0;
         const corM=pctM>=100?'var(--v)':pctM>=50?'var(--am)':'var(--r)';
         const badgeM=pctM>=100?'✅':'⚠️';
         const lblMeta=cx.metaPct>0?(cx.metaPct+'% da receita = '+brl(metaIdeal)):brl(metaIdeal);
-        cards+='<div class="cai-meta-mensal">';
-        cards+='<div class="cai-meta-mensal-top">';
+        cards+='<div class="cai-meta-mensal"><div class="cai-meta-mensal-top">';
         cards+='<span class="cai-meta-mensal-lbl">'+MESES[mes]+' — Meta: '+lblMeta+'</span>';
-        cards+='<span class="cai-meta-mensal-val" style="color:'+corM+'">'+badgeM+' '+brl(depMes)+'/'+brl(metaIdeal)+'</span>';
-        cards+='</div>';
-        cards+='<div class="cai-meta-bar-wrap"><div class="cai-meta-bar-fill" style="width:'+pctM.toFixed(0)+'%;background:'+corM+'"></div></div>';
-        cards+='</div>';
-        // Alerta fim do mês
-        const hoje=new Date();
-        const ultimoDia=new Date(ano,mes+1,0).getDate();
-        const diasR=ultimoDia-hoje.getDate();
-        if(hoje.getMonth()===mes&&hoje.getFullYear()===ano&&diasR<=5&&pctM<100){
-          cards+='<div class="cai-alerta">⚠️ Faltam '+diasR+' dia'+(diasR!==1?'s':'')+' e ainda falta '+brl(metaIdeal-depMes)+' para a meta de '+MESES[mes]+'!</div>';
-        }
+        cards+='<span class="cai-meta-mensal-val" style="color:'+corM+'">'+badgeM+' '+brl(depMes)+'/'+brl(metaIdeal)+'</span></div>';
+        cards+='<div class="cai-meta-bar-wrap"><div class="cai-meta-bar-fill" style="width:'+pctM.toFixed(0)+'%;background:'+corM+'"></div></div></div>';
+        const hoje=new Date();const ultimoDia=new Date(ano,mes+1,0).getDate();const diasR=ultimoDia-hoje.getDate();
+        if(hoje.getMonth()===mes&&hoje.getFullYear()===ano&&diasR<=5&&pctM<100)cards+='<div class="cai-alerta">⚠️ Faltam '+diasR+' dia'+(diasR!==1?'s':'')+' e ainda falta '+brl(metaIdeal-depMes)+' para a meta de '+MESES[mes]+'!</div>';
       }
-      // Box de rendimento CDI
+      // CDI
       if(cx.pctCdi>0&&cx.inicioCdi){
-        const taxaEfetiva = taxaCDImensal * cx.pctCdi / 100; // taxa mensal efetiva
-        const inicio = new Date(cx.inicioCdi+'T00:00:00');
-        const hoje2 = new Date();
-        // Calcular meses completos desde início
-        // Calcular dias decorridos desde o início
-        const diasDecorridos = Math.max(0, Math.floor((hoje2-inicio)/(1000*60*60*24)));
-        const mesesDecorridos = diasDecorridos / 30.44; // meses fracionados
-        // Total depositado/retirado desde o início
-        const depositosTotais = caiMovs.filter(function(m){
-          return m.caixinhaId===cx.id&&m.tipo==='Depósito'&&new Date(m.data+'T00:00:00')>=inicio;
-        }).reduce(function(s,m){return s+m.valor;},0);
-        const retiradaTotais = caiMovs.filter(function(m){
-          return m.caixinhaId===cx.id&&m.tipo==='Retirada'&&new Date(m.data+'T00:00:00')>=inicio;
-        }).reduce(function(s,m){return s+m.valor;},0);
-        const saldoBase = Math.max(0, depositosTotais - retiradaTotais);
-        // Rendimento com juros compostos (usando meses fracionados para precisão diária)
-        const saldoComRendimento = saldoBase > 0 ? saldoBase * Math.pow(1 + taxaEfetiva/100, mesesDecorridos) : 0;
-        const rendimento = Math.max(0, saldoComRendimento - saldoBase);
-        // Estimativa do mês corrente
-        const rendMes = cx.saldo * taxaEfetiva / 100;
-        const dataCDIref = ls.get('cf_cdi_data','');
-        cards+='<div class="cdi-box">';
-        cards+='<div class="cdi-box-top">';
-        cards+='<span class="cdi-lbl">📈 '+cx.pctCdi+'% CDI</span>';
-        cards+='<span class="cdi-taxa">Taxa: '+(taxaEfetiva).toFixed(4)+'%/mês'+(dataCDIref?' · ref '+dataCDIref:'')+'</span>';
-        cards+='</div>';
+        const taxaEfetiva=taxaCDImensal*cx.pctCdi/100;
+        const inicio=new Date(cx.inicioCdi+'T00:00:00');const hoje2=new Date();
+        const diasDecorridos=Math.max(0,Math.floor((hoje2-inicio)/(1000*60*60*24)));
+        const mesesDecorridos=diasDecorridos/30.44;
+        const depositosTotais=caiMovs.filter(function(m){return m.caixinhaId===cx.id&&m.tipo==='Depósito'&&new Date(m.data+'T00:00:00')>=inicio;}).reduce(function(s,m){return s+m.valor;},0);
+        const retiradaTotais=caiMovs.filter(function(m){return m.caixinhaId===cx.id&&m.tipo==='Retirada'&&new Date(m.data+'T00:00:00')>=inicio;}).reduce(function(s,m){return s+m.valor;},0);
+        const saldoBase=Math.max(0,depositosTotais-retiradaTotais);
+        const rendimento=Math.max(0,(saldoBase>0?saldoBase*Math.pow(1+taxaEfetiva/100,mesesDecorridos):0)-saldoBase);
+        const rendMes=cx.saldo*taxaEfetiva/100;
+        const dataCDIref=ls.get('cf_cdi_data','');
+        cards+='<div class="cdi-box"><div class="cdi-box-top"><span class="cdi-lbl">📈 '+cx.pctCdi+'% CDI</span><span class="cdi-taxa">Taxa: '+(taxaEfetiva).toFixed(4)+'%/mês'+(dataCDIref?' · ref '+dataCDIref:'')+'</span></div>';
         cards+='<div class="cdi-row"><span class="cdi-row-lbl">💰 Depositado</span><span class="cdi-row-val" style="color:var(--tx)">'+brl(saldoBase)+'</span></div>';
-        if(rendimento>0) cards+='<div class="cdi-row"><span class="cdi-row-lbl">📊 Rendimento acumulado</span><span class="cdi-row-val" style="color:var(--v)">+'+brl(rendimento)+'</span></div>';
+        if(rendimento>0)cards+='<div class="cdi-row"><span class="cdi-row-lbl">📊 Rendimento acumulado</span><span class="cdi-row-val" style="color:var(--v)">+'+brl(rendimento)+'</span></div>';
         cards+='<div class="cdi-row"><span class="cdi-row-lbl">🗓️ Estimativa deste mês</span><span class="cdi-row-val" style="color:var(--v)">+'+brl(rendMes)+'</span></div>';
-        cards+='<div class="cdi-row" style="border-top:1px solid var(--border);margin-top:4px"><span class="cdi-row-lbl" style="font-weight:700">Total c/ rendimento</span><span class="cdi-row-val" style="color:var(--az)">'+brl(cx.saldo+rendimento)+'</span></div>';
-        cards+='</div>';
+        cards+='<div class="cdi-row" style="border-top:1px solid var(--border);margin-top:4px"><span class="cdi-row-lbl" style="font-weight:700">Total c/ rendimento</span><span class="cdi-row-val" style="color:var(--az)">'+brl(cx.saldo+rendimento)+'</span></div></div>';
       }
-      // Projeção de meta total
+      // Projeção
       if(cx.meta>0&&cx.saldo<cx.meta){
         var movsTodos=caiMovs.filter(function(m){return m.caixinhaId===cx.id&&m.tipo==='Depósito';});
         if(movsTodos.length>=2){
-          var mesesDep={};
-          movsTodos.forEach(function(m){var d=td(m.data);var k=d.getFullYear()+'-'+d.getMonth();mesesDep[k]=(mesesDep[k]||0)+m.valor;});
-          var vals=Object.values(mesesDep).slice(-3);
-          var media=vals.reduce(function(s,v){return s+v;},0)/vals.length;
-          if(media>0){
-            var falta=cx.meta-cx.saldo;
-            var mesesRest=Math.ceil(falta/media);
-            var dataPrj=new Date();dataPrj.setMonth(dataPrj.getMonth()+mesesRest);
-            var proj=dataPrj.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
-            cards+='<div class="cai-projecao">📈 Ritmo atual: '+brl(media)+'/mês. Meta em <strong>'+proj+'</strong></div>';
-          }
+          var mesesDep={};movsTodos.forEach(function(m){var d=td(m.data);var k=d.getFullYear()+'-'+d.getMonth();mesesDep[k]=(mesesDep[k]||0)+m.valor;});
+          var vals=Object.values(mesesDep).slice(-3);var media=vals.reduce(function(s,v){return s+v;},0)/vals.length;
+          if(media>0){var falta=cx.meta-cx.saldo;var mesesRest=Math.ceil(falta/media);var dataPrj=new Date();dataPrj.setMonth(dataPrj.getMonth()+mesesRest);
+            cards+='<div class="cai-projecao">📈 Ritmo atual: '+brl(media)+'/mês. Meta em <strong>'+dataPrj.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})+'</strong></div>';}
         }
       }
-      cards+='<div class="cai-btns"><button class="cai-btn cai-dep" onclick="abrirMovCaixinha(\''+cx.id+'\',\''+cx.nome+'\',\''+cx.emoji+'\',\'Depósito\','+cx.saldo+')">+ Depositar</button><button class="cai-btn cai-ret" onclick="abrirMovCaixinha(\''+cx.id+'\',\''+cx.nome+'\',\''+cx.emoji+'\',\'Retirada\','+cx.saldo+')">− Retirar</button></div>';
+      // Botões
+      cards+='<div class="cai-btns" style="margin-top:12px"><button class="cai-btn cai-dep" onclick="abrirMovCaixinha(\''+cx.id+'\',\''+cx.nome+'\',\''+cx.emoji+'\',\'Depósito\','+cx.saldo+')">+ Depositar</button><button class="cai-btn cai-ret" onclick="abrirMovCaixinha(\''+cx.id+'\',\''+cx.nome+'\',\''+cx.emoji+'\',\'Retirada\','+cx.saldo+')">− Retirar</button></div>';
       cards+='<button onclick="abrirEditCaixinha(\''+cx.id+'\')" style="width:100%;margin-top:8px;padding:7px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--az);font-size:12px;cursor:pointer;font-weight:600">✏️ Editar caixinha</button>';
-      cards+='<button onclick="excluirCaixinha(\''+cx.id+'\',\''+cx.nome+'\',event)" style="width:100%;margin-top:8px;padding:7px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--mu);font-size:12px;cursor:pointer" onmouseover="this.style.background=\'var(--rl)\';this.style.color=\'var(--r)\';" onmouseout="this.style.background=\'none\';this.style.color=\'var(--mu)\';">🗑️ Excluir caixinha</button></div>';
+      cards+='<button onclick="excluirCaixinha(\''+cx.id+'\',\''+cx.nome+'\',event)" style="width:100%;margin-top:6px;padding:7px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--mu);font-size:12px;cursor:pointer" onmouseover="this.style.background=\'var(--rl)\';this.style.color=\'var(--r)\';" onmouseout="this.style.background=\'none\';this.style.color=\'var(--mu)\';">🗑️ Excluir caixinha</button>';
+      // Últimas 3 movimentações desta caixinha
+      const movsCx=caiMovs.filter(m=>m.caixinhaId===cx.id);
+      if(movsCx.length){
+        cards+='<div style="margin-top:12px;border-top:1px solid var(--bg);padding-top:10px">';
+        cards+='<div style="font-size:11px;color:var(--lb);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Últimas movimentações'+(movsCx.length>3?' <span style="font-weight:400;color:var(--mu)">('+movsCx.length+' no total)</span>':'')+'</div>';
+        movsCx.slice(0,3).forEach(m=>{
+          cards+='<div class="cai-mov"><div class="cai-mov-ic" style="background:'+(m.tipo==='Depósito'?'var(--vl)':'var(--rl)')+'">'+( m.tipo==='Depósito'?'📥':'📤')+'</div><div class="cai-mov-info"><div class="cai-mov-desc">'+m.desc+'</div><div class="cai-mov-meta">'+m.tipo+' · '+td(m.data).toLocaleDateString('pt-BR')+' · Saldo: '+brl(m.saldoApos)+'</div></div><span class="cai-mov-val" style="color:'+(m.tipo==='Depósito'?'var(--v)':'var(--r)')+'">'+( m.tipo==='Depósito'?'+':'-')+brl(m.valor)+'</span></div>';
+        });
+        cards+='</div>';
+      }
+      cards+='</div></div></div>';
     });
     document.getElementById('cai-cards').innerHTML=cards;
-    let hist='';
-    caixinhas.forEach(cx=>{
-      const movs=caiMovs.filter(m=>m.caixinhaId===cx.id);
-      if(!movs.length)return;
-      const totalMovs=movs.length;
-      hist+='<div class="cai-hist"><div class="cai-hist-title">'+cx.emoji+' Histórico — '+cx.nome+(totalMovs>10?' <span style="font-size:11px;color:var(--mu);font-weight:400">('+totalMovs+' no total)</span>':'')+'</div><div class="cai-hist-body">';
-      movs.slice(0,10).forEach(m=>{
-        hist+='<div class="cai-mov"><div class="cai-mov-ic" style="background:'+(m.tipo==='Depósito'?'var(--vl)':'var(--rl)')+'">'+( m.tipo==='Depósito'?'📥':'📤')+'</div><div class="cai-mov-info"><div class="cai-mov-desc">'+m.desc+'</div><div class="cai-mov-meta">'+m.tipo+' · '+td(m.data).toLocaleDateString('pt-BR')+' · Saldo: '+brl(m.saldoApos)+'</div></div><span class="cai-mov-val" style="color:'+(m.tipo==='Depósito'?'var(--v)':'var(--r)')+'">'+( m.tipo==='Depósito'?'+':'-')+brl(m.valor)+'</span></div>';
-      });
-      hist+='</div></div>';
-    });
-    document.getElementById('cai-hist-block').innerHTML=hist;
   }
-  const todos=trans.filter(t=>t.tipo==='Guardado').sort((a,b)=>td(b.data)-td(a.data));
-  const totalGuardado=todos.reduce((s,t)=>s+t.valor,0);
+  // Hero: usa total global de investimentos para patrimônio
+  const todosGlobal=trans.filter(t=>t.tipo==='Guardado');
+  const totalGuardado=todosGlobal.reduce((s,t)=>s+t.valor,0);
   const totalCaixinhas=caixinhas.reduce((s,cx)=>s+(cx.saldo||0),0);
   const patrimonioTotal=totalGuardado+totalCaixinhas;
   let heroHtml='<div class="pat-hero"><div class="pat-hero-lbl">Patrimônio Total</div><div class="pat-hero-val">'+brl(patrimonioTotal)+'</div><div class="pat-hero-sub">Caixinhas + Investimentos</div><div class="pat-hero-row">';
@@ -1389,6 +1386,10 @@ function renderPatrimonio(){
   heroHtml+='<div class="pat-mini ano-card-click" onclick="abrirGraficoInvestimentos()" title="Ver gráfico"><div class="pat-mini-lbl">📦 Investimentos ↗</div><div class="pat-mini-val" style="color:#93C5FD">'+brl(totalGuardado)+'</div></div>';
   heroHtml+='</div></div>';
   document.getElementById('pat-hero-block').innerHTML=heroHtml;
+  // Lista de investimentos: somente do mês selecionado
+  const todos=doMes(mes,ano).filter(t=>t.tipo==='Guardado').sort((a,b)=>td(b.data)-td(a.data));
+  const investLbl=document.getElementById('invest-slbl');
+  if(investLbl)investLbl.textContent='📦 Investimentos — '+MESES[mes]+' '+ano;
   const lista=document.getElementById('pat-lista');
   const empty2=document.getElementById('pat-empty');
   if(!todos.length){lista.innerHTML='';empty2.style.display='';return;}
@@ -1631,7 +1632,7 @@ function renderCartoes(){
     // Escurecer a cor do cartão para melhor legibilidade
     var hexToRgb=function(hex){hex=hex.replace('#','');if(hex.length===3)hex=hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];var n=parseInt(hex,16);return{r:(n>>16)&255,g:(n>>8)&255,b:n&255};};
     var rgb=hexToRgb(cc.cor||'#6366F1');
-    var bgColor='rgba('+Math.max(0,rgb.r-60)+','+Math.max(0,rgb.g-60)+','+Math.max(0,rgb.b-60)+',1)';
+    var bgColor='rgba('+Math.max(0,rgb.r-40)+','+Math.max(0,rgb.g-40)+','+Math.max(0,rgb.b-40)+',0.92)';
     html+='<div class="cc-mini-header" style="background:'+bgColor+';border-radius:12px 12px 0 0" onclick="handleCCMiniClick(event,\'' + ccId + '\')">';
     html+='<div class="cc-order-btns'+((_reordenando)?' visible':'')+'" onclick="event.stopPropagation()" id="ob-'+cc.id+'">';
     html+='<button class="cc-order-btn" onclick="moverCartao(\''+cc.id+'\',\'up\')" title="Mover para cima">▲</button>';
