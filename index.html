@@ -3291,16 +3291,20 @@ function fecharAnoModal(){
 // ── SWIPE PARA TROCAR ABAS ────────────────────────────────
 (function(){
   var TABS=['resumo','cartoes','patrimonio','transacoes','recorrentes','cats'];
-  var touchStartX=0, touchStartY=0, touchStartTime=0;
+  var touchStartX=0, touchStartY=0, touchStartTime=0, touchOnTabs=false;
 
   document.addEventListener('touchstart',function(e){
     touchStartX=e.changedTouches[0].clientX;
     touchStartY=e.changedTouches[0].clientY;
     touchStartTime=Date.now();
+    // Marcar se o toque começou na barra de abas
+    var tabBar=document.querySelector('.tabs');
+    touchOnTabs=tabBar?tabBar.contains(e.target):false;
   },{passive:true});
 
   document.addEventListener('touchend',function(e){
     if(document.querySelector('.ovl.open'))return;
+    if(touchOnTabs)return; // toque na tab bar: não troca aba
     var dx=e.changedTouches[0].clientX-touchStartX;
     var dy=e.changedTouches[0].clientY-touchStartY;
     var dt=Date.now()-touchStartTime;
