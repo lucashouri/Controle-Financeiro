@@ -1020,7 +1020,25 @@ input[type="date"]::-webkit-calendar-picker-indicator{position:absolute;inset:0;
 // ── SUPABASE ───────────────────────────────────────────────
 const SUPA_URL='https://pirzmxhdbadihjzgbvrd.supabase.co';
 const SUPA_KEY='sb_publishable_o87UwlZ-EWyz1LaGxTetMg_axqf5FDQ';
-const supa=supabase.createClient(SUPA_URL,SUPA_KEY);
+const supa=supabase.createClient(SUPA_URL,SUPA_KEY,{
+  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
+});
+
+// Manter sessão quando app volta do background
+supa.auth.onAuthStateChange(function(event,session){
+  if(event==='SIGNED_IN'&&session&&!authUser){
+    authUser=session.user;
+    carregarPerfil().then(()=>carregarTudo()).then(()=>showApp());
+  }
+  if(event==='TOKEN_REFRESHED'&&session){
+    authUser=session.user;
+  }
+  if(event==='SIGNED_OUT'){
+    authUser=null;
+    document.getElementById('app-screen').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+});
 
 // ── CONSTANTES ────────────────────────────────────────────
 const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -1674,10 +1692,26 @@ function totalGastoCC(cc){return cc.gastos.reduce((s,g)=>s+g.valor,0);}
 function corProgresso(pct){return pct>=90?'#EF4444':pct>=70?'#F59E0B':'#16A34A';}
 
 // Gastos em aberto (faturas pagas liberam limite)
+// Valor de todos os gastos não pagos (usado para limite disponível)
 function gastoEmAberto(cc){
   return cc.gastos.filter(function(g){
     const d=td(g.data);
     return !faturasPagas.some(function(f){return f.cartao_id===cc.id&&f.mes===d.getMonth()&&f.ano===d.getFullYear();});
+  }).reduce(function(s,g){return s+g.valor;},0);
+}
+
+// Valor da fatura do mês de vencimento atual (para notificação)
+function faturaVencAtual(cc){
+  const hoje=new Date();
+  // Mês de referência: se hoje <= diaVenc, fatura do mês atual; senão do próximo
+  const mesRef=hoje.getDate()<=cc.diaVenc?hoje.getMonth():hoje.getMonth()+1;
+  const anoRef=mesRef>11?hoje.getFullYear()+1:hoje.getFullYear();
+  const mRef=mesRef>11?0:mesRef;
+  // Verifica se já foi paga
+  const paga=faturasPagas.some(function(f){return f.cartao_id===cc.id&&f.mes===mRef&&f.ano===anoRef;});
+  if(paga)return 0;
+  return cc.gastos.filter(function(g){
+    const d=td(g.data);return d.getMonth()===mRef&&d.getFullYear()===anoRef;
   }).reduce(function(s,g){return s+g.valor;},0);
 }
 
@@ -2980,7 +3014,7 @@ function verificarVencimentos(){
   cartoes.forEach(function(cc){
     const venc=cc.diaVenc||10;
     const diasRestantes=venc-diaHoje;
-    const gastosAbertos=gastoEmAberto(cc);
+    const gastosAbertos=faturaVencAtual(cc);
     if(gastosAbertos>0&&diasRestantes>=0&&diasRestantes<=3){
       const msg=diasRestantes===0
         ?'🔔 '+cc.nome+' vence HOJE! '+brl(gastosAbertos)
