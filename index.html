@@ -1335,26 +1335,33 @@ function renderResumo(){
 
 function renderRelatorio(){
   const dm=doMes(mes,ano);
-  // Gastos do cartão do mês
   const gastCartaoMesRel=cartoes.reduce((s,cc)=>{
     return s+cc.gastos.filter(g=>{const d=td(g.data);return d.getMonth()===mes&&d.getFullYear()===ano;}).reduce((ss,g)=>ss+g.valor,0);
   },0);
-  // Categorias de gasto + cartões
   let topGastos=catG.map(cat=>({cat,v:dm.filter(t=>t.tipo==='Gasto'&&t.categoria===cat).reduce((s,t)=>s+t.valor,0)})).filter(x=>x.v>0);
   if(gastCartaoMesRel>0) topGastos.push({cat:'💳 Cartões',v:gastCartaoMesRel,isCartao:true});
   topGastos=topGastos.sort((a,b)=>b.v-a.v).slice(0,6);
   const maxGasto=topGastos[0]?.v||1;
+  // Total geral de gastos do mês (transações + cartões)
+  const totalGastosMes=dm.filter(t=>t.tipo==='Gasto').reduce((s,t)=>s+t.valor,0)+gastCartaoMesRel;
   const topTrans=[...dm].filter(t=>t.tipo!=='Guardado').sort((a,b)=>b.valor-a.valor).slice(0,5);
   const el=document.getElementById('rel-content');
   if(!dm.length){el.innerHTML='';return;}
   let html='';
   if(topGastos.length){
     html+='<div class="dash-sec"><div class="dash-sec-title">📊 Maiores gastos — '+MESES[mes]+'</div>';
-    topGastos.forEach(x=>{
-      // Cartões: emoji já está no nome, não usar gi()
+    topGastos.forEach((x,i)=>{
       const icon=x.isCartao?'💳':(x.cat.charCodeAt(0)>127?x.cat.codePointAt(0)?String.fromCodePoint(x.cat.codePointAt(0)):'💸':gi(x.cat,'Gasto'));
       const nome=x.isCartao?'Cartões de crédito':x.cat;
-      html+='<div class="cat-bar-item"><span class="cat-bar-emoji">'+icon+'</span><div class="cat-bar-body"><div class="cat-bar-top"><span class="cat-bar-nome">'+nome+'</span><span class="cat-bar-val">'+brl(x.v)+'</span></div><div class="cat-bar-track"><div class="cat-bar-fill" style="width:'+(x.v/maxGasto*100).toFixed(0)+'%"></div></div></div></div>';
+      const pct=totalGastosMes>0?(x.v/totalGastosMes*100).toFixed(1):0;
+      const barW=(x.v/maxGasto*100).toFixed(0);
+      html+='<div class="cat-bar-item" onclick="togglePctGasto(\'pct-'+i+'\')" style="cursor:pointer">';
+      html+='<span class="cat-bar-emoji">'+icon+'</span>';
+      html+='<div class="cat-bar-body">';
+      html+='<div class="cat-bar-top"><span class="cat-bar-nome">'+nome+'</span><span class="cat-bar-val">'+brl(x.v)+'</span></div>';
+      html+='<div class="cat-bar-track"><div class="cat-bar-fill" style="width:'+barW+'%"></div></div>';
+      html+='<div id="pct-'+i+'" style="display:none;margin-top:6px;padding:6px 10px;background:var(--azl);border-radius:8px;font-size:12px;font-weight:700;color:var(--az)">📊 '+pct+'% dos gastos de '+MESES[mes]+' · '+brl(x.v)+' de '+brl(totalGastosMes)+'</div>';
+      html+='</div></div>';
     });
     html+='</div>';
   }
@@ -1368,6 +1375,12 @@ function renderRelatorio(){
     html+='</div>';
   }
   el.innerHTML=html;
+}
+
+function togglePctGasto(id){
+  var el=document.getElementById(id);
+  if(!el)return;
+  el.style.display=el.style.display==='none'?'block':'none';
 }
 
 // ── RENDER PATRIMÔNIO ─────────────────────────────────────
