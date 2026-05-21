@@ -1037,7 +1037,7 @@ document.addEventListener('visibilitychange',async function(){
 // ── CONSTANTES ────────────────────────────────────────────
 const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const MABR=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-const ICONS={'Combustível':'⛽','Veículo':'🚐','Pix/Débito':'📲','Alimentação':'🍽️','Moradia':'🏠','Pagamento de Alunos':'🎓','Pagamento Cooperativa':'🤝','Tesouro Direto':'🏦','Ações':'📈','Recebido':'💵','ETFs':'💹','FIs':'🏢','Outros':'🪙'};
+const ICONS={'Alimentação':'🍽️','Moradia':'🏠','Transporte':'🚗','Saúde':'💊','Educação':'📚','Lazer':'🎮','Roupas':'👕','Assinaturas':'📱','Pix/Débito':'📲','Outros gastos':'💸','Salário':'💰','Freelance':'💼','Vendas':'🛍️','Renda Extra':'💵','Recebido':'✅','Tesouro Direto':'🏦','Ações':'📈','ETFs':'💹','Fundos Imob.':'🏢','Poupança':'🐷','Outros invest.':'🪙'};
 
 // ── ESTADO ────────────────────────────────────────────────
 let authUser=null,userNome='';
@@ -1045,9 +1045,9 @@ let mes=new Date().getMonth(),ano=new Date().getFullYear();
 let tab='resumo',filtro='todos',tipoF='Gasto';
 let trans=[],cartoes=[],caixinhas=[],caiMovs=[],recorrentes=[];
 const ls={get:(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
-let catG=ls.get('cf_catg',['Combustível','Veículo','Pix/Débito','Alimentação','Moradia']);
-let catR=ls.get('cf_catr',['Pagamento de Alunos','Pagamento Cooperativa']);
-let catGD=ls.get('cf_catgd',['Tesouro Direto','Ações','ETFs','FIs','Outros']);
+let catG=ls.get('cf_catg',['Alimentação','Moradia','Transporte','Saúde','Educação','Lazer','Roupas','Assinaturas','Pix/Débito','Outros gastos']);
+let catR=ls.get('cf_catr',['Salário','Freelance','Vendas','Renda Extra','Recebido']);
+let catGD=ls.get('cf_catgd',['Tesouro Direto','Ações','ETFs','Fundos Imob.','Poupança','Outros invest.']);
 const saveCG=()=>ls.set('cf_catg',catG);
 const saveCR=()=>ls.set('cf_catr',catR);
 const saveCGD=()=>ls.set('cf_catgd',catGD);
