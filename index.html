@@ -158,6 +158,10 @@ input[type="date"]::-webkit-calendar-picker-indicator{position:absolute;inset:0;
 .pat-val{font-weight:700;font-size:14px;color:var(--az);flex-shrink:0}
 .pat-del{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:none;color:#ccc;font-size:16px;cursor:pointer}
 .pat-del:hover{background:var(--rl);color:var(--r)}
+.pat-vender{padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--az);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.pat-vender:hover{background:var(--azl)}
+.pat-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.venda-result{border-radius:10px;padding:10px 14px;margin:10px 0;font-size:13px;font-weight:700;text-align:center}
 .cai-card{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:16px;position:relative;overflow:hidden}
 .cai-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
 .cai-lucas::before{background:linear-gradient(90deg,#2563EB,#60A5FA)}
@@ -946,6 +950,29 @@ input[type="date"]::-webkit-calendar-picker-indicator{position:absolute;inset:0;
   </div>
 </div>
 
+<!-- MODAL VENDA DE INVESTIMENTO -->
+<div class="ovl" id="ovl-venda-invest" onclick="fecharSe(event,'ovl-venda-invest')">
+  <div class="mdl" style="max-width:400px">
+    <div class="mhdr"><span class="mtit">📤 Registrar Venda</span><button class="mcls" onclick="fecharModal('ovl-venda-invest')">×</button></div>
+    <div style="background:var(--bg);border-radius:10px;padding:10px 13px;margin-bottom:14px">
+      <div style="font-size:11px;color:var(--mu);margin-bottom:2px">Investimento</div>
+      <div style="font-size:14px;font-weight:700;color:var(--tx)" id="venda-desc"></div>
+      <div style="font-size:12px;color:var(--mu);margin-top:2px">Valor investido: <span id="venda-orig" style="font-weight:700;color:var(--az)"></span></div>
+    </div>
+    <div class="gf">
+      <div class="fld"><label>Valor de venda (R$)</label><input id="venda-valor" type="number" min="0" step="0.01" placeholder="0,00" oninput="calcularResultadoVenda()"/></div>
+      <div class="fld"><label>Data da venda</label><input id="venda-data" type="date"/></div>
+    </div>
+    <div id="venda-resultado" style="display:none" class="venda-result"></div>
+    <div class="fld"><label>Observação (opcional)</label><input id="venda-obs" type="text" placeholder="Ex: Venda parcial, stop loss..."/></div>
+    <div class="errmsg" id="venda-err" style="display:none"></div>
+    <div class="brow">
+      <button class="bcanc" onclick="fecharModal('ovl-venda-invest')">Cancelar</button>
+      <button class="badd" style="background:var(--az)" onclick="confirmarVendaInvest()">📤 Confirmar venda</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL PAGAR FATURA -->
 <div class="ovl" id="ovl-fatura" onclick="fecharSe(event,'ovl-fatura')">
   <div class="mdl" style="max-width:400px">
@@ -1516,7 +1543,78 @@ function renderPatrimonio(){
   const empty2=document.getElementById('pat-empty');
   if(!todos.length){lista.innerHTML='';empty2.style.display='';return;}
   empty2.style.display='none';
-  lista.innerHTML=todos.map(t=>'<div class="pat-item"><div class="pat-icon">'+gi(t.categoria,'Guardado')+'</div><div class="pat-info"><div class="pat-name">'+t.desc+'</div><div class="pat-date">'+t.categoria+' · '+td(t.data).toLocaleDateString('pt-BR')+(t.obs?' · '+t.obs:'')+'</div></div><span class="pat-val">+'+brl(t.valor)+'</span><button class="pat-del" onclick="remover(\''+t.id+'\')">×</button></div>').join('');
+  lista.innerHTML=todos.map(t=>'<div class="pat-item"><div class="pat-icon">'+gi(t.categoria,'Guardado')+'</div><div class="pat-info"><div class="pat-name">'+t.desc+'</div><div class="pat-date">'+t.categoria+' · '+td(t.data).toLocaleDateString('pt-BR')+(t.obs?' · '+t.obs:'')+'</div></div><span class="pat-val">+'+brl(t.valor)+'</span><div class="pat-actions"><button class="pat-vender" onclick="abrirVendaInvest(\''+t.id+'\',\''+t.desc.replace(/'/g,"\\'") +'\','+t.valor+',\''+t.categoria+'\')">📤 Vender</button><button class="pat-del" onclick="remover(\''+t.id+'\')">×</button></div></div>').join('');
+}
+
+// ── VENDA DE INVESTIMENTO ─────────────────────────────────
+var _vendaInvestId=null, _vendaInvestOrig=0;
+
+function abrirVendaInvest(id, desc, valorOrig, categoria){
+  _vendaInvestId=id;
+  _vendaInvestOrig=valorOrig;
+  document.getElementById('venda-desc').textContent=desc+' ('+categoria+')';
+  document.getElementById('venda-orig').textContent=brl(valorOrig);
+  document.getElementById('venda-valor').value='';
+  document.getElementById('venda-obs').value='';
+  document.getElementById('venda-resultado').style.display='none';
+  document.getElementById('venda-err').style.display='none';
+  // Data padrão: hoje
+  const h=new Date();
+  document.getElementById('venda-data').value=h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0')+'-'+String(h.getDate()).padStart(2,'0');
+  document.getElementById('ovl-venda-invest').classList.add('open');
+  setTimeout(()=>document.getElementById('venda-valor').focus(),120);
+}
+
+function calcularResultadoVenda(){
+  const venda=parseFloat(document.getElementById('venda-valor').value)||0;
+  const res=document.getElementById('venda-resultado');
+  if(!venda){res.style.display='none';return;}
+  const diff=venda-_vendaInvestOrig;
+  const pct=_vendaInvestOrig>0?(diff/_vendaInvestOrig*100).toFixed(1):0;
+  if(diff>0){
+    res.style.display='block';
+    res.style.background='var(--vl)';
+    res.style.color='var(--v)';
+    res.textContent='📈 Lucro de '+brl(diff)+' (+'+pct+'%)';
+  }else if(diff<0){
+    res.style.display='block';
+    res.style.background='var(--rl)';
+    res.style.color='var(--r)';
+    res.textContent='📉 Prejuízo de '+brl(Math.abs(diff))+' ('+pct+'%)';
+  }else{
+    res.style.display='block';
+    res.style.background='var(--bg)';
+    res.style.color='var(--mu)';
+    res.textContent='➡️ Empate — mesmo valor investido';
+  }
+}
+
+async function confirmarVendaInvest(){
+  const venda=parseFloat(document.getElementById('venda-valor').value);
+  const data=document.getElementById('venda-data').value;
+  const obs=document.getElementById('venda-obs').value.trim();
+  const err=document.getElementById('venda-err');
+  if(!venda||!data){err.textContent='Preencha o valor e a data.';err.style.display='';return;}
+  err.style.display='none';
+  const desc=document.getElementById('venda-desc').textContent;
+  const nomeAtivo=desc.split(' (')[0];
+  const diff=venda-_vendaInvestOrig;
+  const obsCompleto='Venda · investido: '+brl(_vendaInvestOrig)+(diff>=0?' · lucro: +':' · prejuízo: ')+brl(Math.abs(diff))+(obs?' · '+obs:'');
+  badge('🔄 Registrando venda...','sync');
+  await supa.from('transacoes').insert({
+    user_id:authUser.id,
+    descricao:'Venda: '+nomeAtivo,
+    tipo:'Receita',
+    categoria:'Venda de Ativo',
+    valor:venda,
+    data:data,
+    obs:obsCompleto
+  });
+  fecharModal('ovl-venda-invest');
+  await carregarTudo();
+  render();
+  const msg=diff>=0?'✅ Venda registrada com lucro de '+brl(diff):'✅ Venda registrada com prejuízo de '+brl(Math.abs(diff));
+  badge(msg,'ok');
 }
 
 // ── RENDER GRÁFICOS ───────────────────────────────────────
