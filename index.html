@@ -8,7 +8,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-title" content="Financeiro"/>
 <title>Controle Financeiro</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root{--bg:#F5F3EF;--card:#FFF;--border:#E8E4DC;--v:#16A34A;--vl:#DCFCE7;--r:#DC2626;--rl:#FEE2E2;--az:#2563EB;--azl:#DBEAFE;--am:#D97706;--aml:#FEF3C7;--tx:#1A1A1A;--mu:#6B6B6B;--lb:#9A948F}
@@ -482,20 +481,12 @@ input[type="date"]::-webkit-calendar-picker-indicator{position:absolute;inset:0;
   <div class="auth-box">
     <img src="/icon-192.png" style="width:56px;height:56px;border-radius:16px;margin:0 auto 12px;display:block;object-fit:cover"/>
     <div class="auth-title">Controle Financeiro</div>
-    <div class="auth-sub" id="auth-sub">Faça login para continuar</div>
-    <div class="auth-tabs">
-      <button class="auth-tab on" id="tab-login" onclick="setAuthTab('login')">Entrar</button>
-      <button class="auth-tab" id="tab-reg" onclick="setAuthTab('reg')">Cadastrar</button>
-    </div>
+    <div class="auth-sub" id="auth-sub">Digite o PIN para entrar</div>
     <div class="auth-err" id="auth-err"></div>
-    <div id="campo-nome" style="display:none">
-      <div class="auth-fld"><label>Seu nome</label><input id="auth-nome" type="text" placeholder="Ex: Lucas André"/></div>
-    </div>
-    <div class="auth-fld"><label>E-mail</label><input id="auth-email" type="email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')fazerAuth()"/></div>
-    <div class="auth-fld"><label>Senha</label>
+    <div class="auth-fld"><label>PIN</label>
     <div class="pw-wrap">
-      <input id="auth-senha" type="password" placeholder="Mínimo 6 caracteres" onkeydown="if(event.key==='Enter')fazerAuth()"/>
-      <button type="button" class="pw-eye" onclick="toggleSenha()" id="pw-eye-btn" title="Mostrar/ocultar senha">👁️</button>
+      <input id="auth-senha" type="password" autocomplete="current-password" placeholder="Digite o PIN" onkeydown="if(event.key==='Enter')fazerAuth()"/>
+      <button type="button" class="pw-eye" onclick="toggleSenha()" id="pw-eye-btn" title="Mostrar/ocultar PIN">👁️</button>
     </div>
   </div>
     <button class="auth-btn" id="auth-btn" onclick="fazerAuth()">Entrar</button>
@@ -1046,20 +1037,53 @@ input[type="date"]::-webkit-calendar-picker-indicator{position:absolute;inset:0;
 </div>
 
 <script>
-// ── SUPABASE ───────────────────────────────────────────────
-const SUPA_URL='https://pirzmxhdbadihjzgbvrd.supabase.co';
-const SUPA_KEY='sb_publishable_o87UwlZ-EWyz1LaGxTetMg_axqf5FDQ';
-const supa=supabase.createClient(SUPA_URL,SUPA_KEY,{
-  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
-});
-
-// Restaurar sessão quando app volta do background (PWA Android)
-document.addEventListener('visibilitychange',async function(){
-  if(document.visibilityState==='visible'&&!authUser){
-    const {data:{session}}=await supa.auth.getSession();
-    if(session){authUser=session.user;await carregarPerfil();await carregarTudo();showApp();}
+// ── BANCO DE DADOS (Neon via /api/db) ─────────────────────
+// Imita o pedaço do cliente do Supabase que o app usa, para o resto do código não mudar.
+const PIN_KEY='cf_pin';
+const getPin=()=>{try{return localStorage.getItem(PIN_KEY)||'';}catch(e){return '';}};
+const setPin=v=>{try{if(v)localStorage.setItem(PIN_KEY,v);else localStorage.removeItem(PIN_KEY);}catch(e){}};
+async function dbCall(body,pin){
+  try{
+    const r=await fetch('/api/db',{method:'POST',headers:{'Content-Type':'application/json','x-app-pin':pin===undefined?getPin():pin},body:JSON.stringify(body)});
+    let j=null;try{j=await r.json();}catch(e){}
+    if(!r.ok||!j||j.error){
+      const msg=(j&&j.error&&j.error.message)||('Erro '+r.status);
+      return{data:null,error:{message:msg,status:r.status}};
+    }
+    return{data:j.data,error:null};
+  }catch(e){return{data:null,error:{message:'Sem conexão com o servidor.',status:0}};}
+}
+class DbQuery{
+  constructor(table){this.b={table,op:'select',filters:[],order:[]};this._single=false;}
+  select(){this.b.op='select';return this;}
+  insert(rows){this.b.op='insert';this.b.rows=rows;return this;}
+  upsert(rows,opt){this.b.op='upsert';this.b.rows=rows;if(opt&&opt.onConflict)this.b.onConflict=opt.onConflict;return this;}
+  update(values){this.b.op='update';this.b.values=values;return this;}
+  delete(){this.b.op='delete';return this;}
+  eq(col,val){this.b.filters.push({col,op:'eq',val});return this;}
+  in(col,val){this.b.filters.push({col,op:'in',val});return this;}
+  order(col,o){this.b.order.push({col,asc:!(o&&o.ascending===false)});return this;}
+  limit(n){this.b.limit=n;return this;}
+  single(){this._single=true;return this;}
+  then(ok,ko){
+    return dbCall(this.b).then(res=>{
+      if(this._single&&!res.error)res={data:(res.data&&res.data[0])||null,error:null};
+      if(res.error&&res.error.status===401)pinInvalido();
+      return res;
+    }).then(ok,ko);
   }
-});
+}
+const supa={from:t=>new DbQuery(t)};
+function pinInvalido(){
+  setPin('');
+  if(typeof authUser!=='undefined'&&authUser){
+    authUser=null;
+    const m=document.getElementById('main-app');if(m)m.style.display='none';
+    const f=document.getElementById('fab-btn');if(f)f.style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+  }
+}
+
 
 // ── CONSTANTES ────────────────────────────────────────────
 const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -1118,49 +1142,32 @@ function toggleSenha(){
   input.focus();
 }
 
-function setAuthTab(m){
-  authMode=m;
-  document.getElementById('tab-login').className='auth-tab'+(m==='login'?' on':'');
-  document.getElementById('tab-reg').className='auth-tab'+(m==='reg'?' on':'');
-  document.getElementById('campo-nome').style.display=m==='reg'?'':'none';
-  document.getElementById('auth-btn').textContent=m==='reg'?'Criar conta':'Entrar';
-  document.getElementById('auth-sub').textContent=m==='reg'?'Crie sua conta gratuita':'Faça login para continuar';
-  document.getElementById('auth-err').style.display='none';
-}
+function setAuthTab(){}
 
 async function fazerAuth(){
-  const email=document.getElementById('auth-email').value.trim();
-  const senha=document.getElementById('auth-senha').value;
-  const nome=document.getElementById('auth-nome').value.trim();
+  const pin=document.getElementById('auth-senha').value.trim();
   const err=document.getElementById('auth-err');
   const btn=document.getElementById('auth-btn');
-  if(!email||!senha){err.textContent='Preencha e-mail e senha.';err.style.cssText='display:block;color:var(--r);background:var(--rl)';return;}
-  if(authMode==='reg'&&!nome){err.textContent='Informe seu nome.';err.style.cssText='display:block;color:var(--r);background:var(--rl)';return;}
+  if(!pin){err.textContent='Digite o PIN.';err.style.cssText='display:block;color:var(--r);background:var(--rl)';return;}
   btn.disabled=true;btn.textContent='Aguarde...';err.style.display='none';
-  try{
-    if(authMode==='reg'){
-      const {error}=await supa.auth.signUp({email,password:senha,options:{data:{nome}}});
-      if(error)throw error;
-      err.textContent='✅ Conta criada! Verifique seu e-mail para confirmar.';
-      err.style.cssText='display:block;color:var(--v);background:var(--vl)';
-    }else{
-      const {data,error}=await supa.auth.signInWithPassword({email,password:senha});
-      if(error)throw error;
-      authUser=data.user;
-      await carregarPerfil();
-      await carregarTudo();
-      showApp();
-    }
-  }catch(e){
-    err.textContent=e.message==='Invalid login credentials'?'E-mail ou senha incorretos.':e.message;
+  const r=await dbCall({op:'ping'},pin);
+  if(r.error){
+    err.textContent=r.error.status===401?'PIN incorreto.':r.error.message;
     err.style.cssText='display:block;color:var(--r);background:var(--rl)';
+  }else{
+    setPin(pin);
+    authUser={id:'casal'};
+    document.getElementById('auth-senha').value='';
+    await carregarPerfil();
+    await carregarTudo();
+    showApp();
   }
-  btn.disabled=false;btn.textContent=authMode==='reg'?'Criar conta':'Entrar';
+  btn.disabled=false;btn.textContent='Entrar';
 }
 
 async function logout(){
   if(!confirm('Deseja sair?'))return;
-  await supa.auth.signOut();
+  setPin('');
   authUser=null;trans=[];cartoes=[];caixinhas=[];caiMovs=[];recorrentes=[];
   document.getElementById('main-app').style.display='none';
   document.getElementById('fab-btn').style.display='none';
@@ -1191,14 +1198,13 @@ function showLoading(v){const el=document.getElementById('loading-screen');el.st
 
 // ── INIT ──────────────────────────────────────────────────
 async function init(){
-  const {data:{session}}=await supa.auth.getSession();
-  if(session){authUser=session.user;await carregarPerfil();await carregarTudo();showApp();}
-  else{document.getElementById('auth-screen').style.display='flex';}
+  if(getPin()){authUser={id:'casal'};await carregarPerfil();await carregarTudo();if(authUser)showApp();}
+  else{document.getElementById('auth-screen').style.display='flex';esconderSplash();}
 }
 
 async function carregarPerfil(){
-  const {data}=await supa.from('perfis').select('nome').eq('id',authUser.id).single();
-  userNome=data?.nome||authUser.email.split('@')[0];
+  const {data}=await supa.from('perfis').select('nome').limit(1).single();
+  userNome=data?.nome||'Casal';
 }
 
 async function carregarTudo(){
@@ -2667,7 +2673,7 @@ async function importarDoNotion(){
 
     statusEl.innerHTML = '📥 Processando ' + total + ' registros...';
 
-    // Mapear registros do Notion para formato Supabase
+    // Mapear registros do Notion para formato do banco
     const CAT_MAP = {'Combustivel':'Combustível','Pix':'Pix/Débito','PIX':'Pix/Débito','Veiculo':'Veículo','Alimentacao':'Alimentação','PG Aluno':'Pagamento de Alunos','PG Cooperativa':'Pagamento Cooperativa','Tesouro':'Tesouro Direto','Acoes':'Ações','Cartão de Crédito':'Pix/Débito'};
 
     const inferir = (desc, obs) => {
@@ -2707,7 +2713,7 @@ async function importarDoNotion(){
       };
     }).filter(r => r.descricao && r.valor > 0);
 
-    statusEl.innerHTML = '📤 Salvando ' + inserts.length + ' registros no Supabase...';
+    statusEl.innerHTML = '📤 Salvando ' + inserts.length + ' registros no banco de dados...';
 
     // Inserir um por um para não perder nenhum
     let ok = 0, erros = 0, primeiroErro = '';
