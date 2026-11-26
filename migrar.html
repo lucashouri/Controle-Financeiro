@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Migrar dados</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+body{font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;padding:20px;background:#f6f5f2;color:#1a1a1a}
+h1{font-size:22px}.box{background:#fff;border-radius:14px;padding:16px;margin:14px 0;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+label{display:block;font-size:13px;margin:10px 0 4px;color:#555}input{width:100%;box-sizing:border-box;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:16px}
+button{width:100%;padding:13px;border:0;border-radius:10px;background:#1E40AF;color:#fff;font-size:16px;font-weight:600;margin-top:14px}
+button.sec{background:#e5e7eb;color:#111}button:disabled{opacity:.5}
+#log{white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:13px;line-height:1.5}
+.ok{color:#047857}.er{color:#b91c1c}
+</style></head><body>
+<h1>Migrar dados do Supabase para o Neon</h1>
+<div class="box">
+<b>Passo 1:</b> o PIN novo do app (o mesmo que você colocou em <code>APP_PIN</code> na Vercel).
+<label>PIN do app</label><input id="pin" type="password"/>
+<b style="display:block;margin-top:16px">Passo 2:</b> o login antigo do Supabase (e-mail e senha que você usava no app).
+<label>E-mail antigo</label><input id="em" type="email"/>
+<label>Senha antiga</label><input id="sn" type="password"/>
+<button id="go">Baixar do Supabase e importar</button>
+<button class="sec" id="file">Ou importar de um arquivo de backup (.json)</button>
+<input id="f" type="file" accept=".json" style="display:none"/>
+</div>
+<div class="box"><div id="log">Aguardando.</div></div>
+<script>
+const SUPA_URL='https://pirzmxhdbadihjzgbvrd.supabase.co';
+const SUPA_KEY='sb_publishable_o87UwlZ-EWyz1LaGxTetMg_axqf5FDQ';
+// ordem respeita as chaves estrangeiras
+const TABELAS=['perfis','cartoes','caixinhas','transacoes','gastos_cartao','movimentacoes_caixinha','recorrentes','faturas_pagas'];
+const $=id=>document.getElementById(id);
+const log=(t,c)=>{const d=document.createElement('div');d.textContent=t;if(c)d.className=c;$('log').appendChild(d);};
+async function api(body){
+  const r=await fetch('/api/db',{method:'POST',headers:{'Content-Type':'application/json','x-app-pin':$('pin').value.trim()},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>null);
+  if(!r.ok||!j||j.error)throw new Error((j&&j.error&&j.error.message)||('Erro '+r.status));
+  return j.data;
+}
+function baixar(dados){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(dados,null,2)],{type:'application/json'}));
+  a.download='backup-controle-financeiro-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+}
+async function importar(dados){
+  log('Importando para o Neon...');
+  for(const t of TABELAS){
+    const rows=dados[t]||[];
+    for(let i=0;i<rows.length;i+=200)await api({op:'insert',table:t,rows:rows.slice(i,i+200),ignoreConflicts:true});
+    const n=(await api({op:'select',table:t,filters:[]})).length;
+    log(t+': '+rows.length+' no backup, '+n+' no Neon',n>=rows.length?'ok':'er');
+  }
+  log('Pronto. Abra o app e confira seus dados.','ok');
+}
+$('go').onclick=async()=>{
+  $('go').disabled=true;$('log').textContent='';
+  try{
+    if(!$('pin').value.trim())throw new Error('Digite o PIN do app.');
+    await api({op:'ping'});log('PIN ok.','ok');
+    const s=supabase.createClient(SUPA_URL,SUPA_KEY);
+    const {error:e1}=await s.auth.signInWithPassword({email:$('em').value.trim(),password:$('sn').value});
+    if(e1)throw new Error('Login no Supabase: '+e1.message+' (se o projeto estiver pausado, restaure em supabase.com/dashboard)');
+    log('Conectado ao Supabase.','ok');
+    const dados={};
+    for(const t of TABELAS){
+      const {data,error}=await s.from(t).select('*');
+      if(error){log(t+': '+error.message,'er');dados[t]=[];continue;}
+      dados[t]=data;log(t+': '+data.length+' linhas lidas');
+    }
+    baixar(dados);log('Backup .json baixado no seu aparelho. Guarde esse arquivo.','ok');
+    await importar(dados);
+  }catch(e){log('Erro: '+e.message,'er');}
+  $('go').disabled=false;
+};
+$('file').onclick=()=>$('f').click();
+$('f').onchange=async ev=>{
+  $('log').textContent='';
+  try{
+    if(!$('pin').value.trim())throw new Error('Digite o PIN do app.');
+    await api({op:'ping'});
+    await importar(JSON.parse(await ev.target.files[0].text()));
+  }catch(e){log('Erro: '+e.message,'er');}
+};
+</script></body></html>
